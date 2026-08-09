@@ -1,5 +1,5 @@
 // 파일명: quizData_accounting.js
-
+window.quizData = window.quizData || {};
 window.quizData["회계학"] = [
     {
       id: "acc_2020_41",
