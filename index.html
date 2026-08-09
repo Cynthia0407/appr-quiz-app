@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>객관식 기출문제 학습기 (클라우드 동기화)</title>
+    <title>감정평가사 1차 기출학습</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -16,164 +16,134 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        .option-btn { width: 100%; text-align: left; padding: 1rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; background-color: #ffffff; transition: all 0.2s; margin-bottom: 0.5rem; word-break: keep-all; line-height: 1.5; font-size: 0.95rem; }
-        .option-btn:not(:disabled):hover { background-color: #f8fafc; border-color: #cbd5e1; cursor: pointer; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; }
+        .option-btn { width: 100%; text-align: left; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; background-color: #ffffff; transition: all 0.2s; margin-bottom: 0.5rem; word-break: keep-all; line-height: 1.6; font-size: 0.95rem; }
+        .option-btn:not(:disabled):hover { background-color: #f1f5f9; border-color: #cbd5e1; cursor: pointer; }
         .option-correct { background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; font-weight: bold; }
         .option-wrong { background-color: #fff1f2 !important; border-color: #f43f5e !important; color: #9f1239 !important; font-weight: bold; text-decoration: line-through; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-[100dvh] flex flex-col text-slate-800">
+<body class="min-h-[100dvh] flex flex-col text-slate-800">
 
     <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="goHome()">
-                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold"><i class="fa-solid fa-graduation-cap"></i></div>
-                <h1 class="font-bold text-slate-800">객관식 기출문제</h1>
+    <header class="bg-[#2c52b3] border-b border-indigo-800 sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <h1 class="font-bold text-white text-lg cursor-pointer" onclick="goHome()">감정평가사 1차 기출학습</h1>
+            <div class="flex items-center gap-2">
+                <button onclick="openCloudModal()" id="cloud-status-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-white/10 border-white/20 text-white hover:bg-white/20">
+                    <i id="cloud-status-icon" class="fa-solid fa-cloud text-indigo-200"></i>
+                    <span id="cloud-status-text" class="hidden sm:inline">오프라인</span>
+                </button>
             </div>
-            <button onclick="openCloudModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-slate-50 border-slate-200" id="cloud-status-btn">
-                <i id="cloud-status-icon" class="fa-solid fa-cloud text-slate-400"></i>
-                <span id="cloud-status-text" class="text-slate-600">오프라인</span>
-            </button>
         </div>
     </header>
 
     <!-- Home View -->
-    <main id="view-home" class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col gap-4">
-        <div class="bg-indigo-900 text-white rounded-2xl p-5 shadow-sm">
-            <h2 class="font-bold text-lg mb-1">과목별 기출문제 풀이</h2>
-            <p class="text-indigo-200 text-sm">클라우드 동기화를 통해 PC와 스마트폰에서 이어서 풀 수 있습니다.</p>
+    <main id="view-home" class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-8 mt-4">
+        <div class="text-center sm:text-left flex flex-col items-center sm:items-start">
+            <h2 class="font-bold text-2xl text-slate-800 mb-2">과목별 기출문제 풀이</h2>
+            <p class="text-slate-500 text-sm">풀이할 과목과 모드를 선택해주세요.</p>
         </div>
-        
-        <div class="flex justify-between items-center mt-2">
-            <h3 class="font-bold text-slate-700">학습 과목</h3>
-            <button onclick="goScrapbook()" class="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-xl text-sm flex items-center gap-1 hover:bg-amber-200 transition-colors">
-                <i class="fa-solid fa-star"></i> 오답/스크랩 노트
-            </button>
-        </div>
-
-        <div id="subject-list" class="grid grid-cols-1 gap-3">
-            <!-- Subjects -->
+        <div id="subject-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <!-- 과목 카드가 동적으로 생성됩니다 -->
         </div>
     </main>
 
     <!-- Quiz View -->
-    <main id="view-quiz" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col">
+    <main id="view-quiz" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col mt-2">
         <div class="flex items-center justify-between mb-4">
-            <button onclick="goHome()" class="text-slate-500 hover:text-slate-800 font-bold text-sm"><i class="fa-solid fa-arrow-left mr-1"></i>목록으로</button>
+            <div class="flex items-center gap-2">
+                <span id="quiz-badge-mode" class="px-2 py-1 bg-rose-100 text-rose-700 text-[10px] font-bold rounded hidden">오답노트 모드</span>
+                <span id="quiz-badge-year" class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded">년도</span>
+                <span id="quiz-badge-subject" class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded">과목명</span>
+            </div>
             <div class="text-sm font-bold text-slate-500" id="quiz-progress-text">0 / 0</div>
         </div>
         
-        <div class="w-full bg-slate-200 rounded-full h-1.5 mb-6">
-            <div id="quiz-progress-bar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full bg-slate-200 rounded-full h-2 mb-6">
+            <div id="quiz-progress-bar" class="bg-[#2c52b3] h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm mb-4">
-            <div class="flex items-center gap-2 mb-3">
-                <span id="quiz-badge-year" class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded">2020년 기출</span>
-                <span id="quiz-badge-subject" class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded">과목명</span>
-            </div>
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-4">
             <h2 id="quiz-question" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed mb-6 whitespace-pre-wrap">문제 내용</h2>
-            
             <div id="quiz-options" class="flex flex-col">
-                <!-- Options -->
+                <!-- 보기 항목들 -->
             </div>
         </div>
 
-        <!-- Post-Answer Actions -->
-        <div id="quiz-actions" class="hidden flex gap-2 mt-2 pb-8">
-            <button id="btn-scrap-toggle" onclick="toggleCurrentScrap()" class="flex-1 py-3.5 rounded-xl font-bold text-sm border-2 transition-colors flex items-center justify-center gap-2"></button>
-            <button onclick="nextQuestion()" class="flex-1 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+        <div id="quiz-actions" class="hidden flex gap-2 mt-2 pb-8 shrink-0">
+            <button id="btn-scrap-toggle" onclick="toggleCurrentScrap()" class="flex-1 py-4 rounded-xl font-bold text-sm border transition-colors flex items-center justify-center gap-2"></button>
+            <button onclick="nextQuestion()" class="flex-1 py-4 bg-[#2c52b3] text-white rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm">
                 다음 문제 <i class="fa-solid fa-arrow-right"></i>
             </button>
         </div>
         
         <!-- Result Screen -->
-        <div id="quiz-result" class="hidden flex-col items-center justify-center py-10">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center text-3xl mb-4"><i class="fa-solid fa-flag-checkered"></i></div>
-            <h2 class="text-xl font-bold text-slate-800 mb-2">과목 학습 완료!</h2>
-            <p class="text-slate-500 text-sm mb-6" id="quiz-result-score">정답률: 0%</p>
-            <div class="flex gap-2 w-full">
-                <button onclick="goHome()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl">목록으로</button>
-                <button onclick="resetSubjectProgress()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl">처음부터 다시</button>
+        <div id="quiz-result" class="hidden flex-col items-center justify-center py-16">
+            <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-4xl mb-4"><i class="fa-solid fa-flag-checkered"></i></div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">학습 완료!</h2>
+            <p class="text-slate-500 text-base mb-8" id="quiz-result-score">정답률: 0%</p>
+            <div class="flex gap-3 w-full max-w-sm">
+                <button onclick="goHome()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">홈으로</button>
+                <button onclick="restartCurrentSession()" class="flex-1 py-3.5 bg-[#2c52b3] hover:bg-blue-800 text-white font-bold rounded-xl shadow-sm transition-colors">다시 풀기</button>
             </div>
-        </div>
-    </main>
-
-    <!-- Scrapbook View -->
-    <main id="view-scrap" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col">
-        <div class="flex items-center justify-between mb-6">
-            <button onclick="goHome()" class="text-slate-500 hover:text-slate-800 font-bold text-sm"><i class="fa-solid fa-arrow-left mr-1"></i>뒤로</button>
-            <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-star text-amber-400 mr-1"></i>오답/스크랩 노트</h2>
-        </div>
-        
-        <div id="scrap-list" class="flex flex-col gap-4 pb-8">
-            <!-- Scraps -->
         </div>
     </main>
 
     <!-- Cloud Modal -->
-    <div id="cloud-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl">
+    <div id="cloud-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-cloud text-indigo-600 mr-2"></i>클라우드 동기화 설정</h3>
-                <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-cloud text-[#2c52b3] mr-2"></i>클라우드 동기화 설정</h3>
+                <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <p class="text-xs text-slate-500 mb-4 bg-slate-50 p-3 rounded-lg">동일한 스터디룸 코드와 Firebase(Firestore) 설정을 입력하면 기기 간에 진행률 및 오답노트가 실시간으로 동기화됩니다.</p>
+            <p class="text-xs text-slate-500 mb-5 bg-slate-50 p-3 rounded-lg leading-relaxed">동일한 스터디룸 코드와 Firebase(Firestore) 설정을 입력하면 PC와 스마트폰 간에 진행률 및 오답노트가 실시간으로 자동 저장·동기화됩니다.</p>
             
-            <label class="block text-xs font-bold text-slate-700 mb-1">스터디룸 코드 (자유롭게 입력)</label>
-            <input type="text" id="cloud-room-id" placeholder="예: my-study-2026" class="w-full border border-slate-200 rounded-xl p-3 text-sm mb-4 focus:outline-none focus:border-indigo-500">
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">스터디룸 코드 (자유롭게 입력)</label>
+            <input type="text" id="cloud-room-id" placeholder="예: cpa_2026_test" class="w-full border border-slate-300 rounded-xl p-3 text-sm mb-5 focus:outline-none focus:border-[#2c52b3] focus:ring-1 focus:ring-[#2c52b3]">
             
-            <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center justify-between mb-1.5">
                 <label class="block text-xs font-bold text-slate-700">Firebase 설정 (JSON)</label>
-                <button onclick="document.getElementById('fb-config-box').classList.toggle('hidden')" class="text-[11px] text-indigo-600 font-bold hover:underline">⚙️ 설정 변경/확인</button>
+                <button onclick="document.getElementById('fb-config-box').classList.toggle('hidden')" class="text-[11px] text-[#2c52b3] font-bold hover:underline">⚙️ 설정 변경/확인</button>
             </div>
-            <div id="fb-config-box" class="hidden mb-4">
-                <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "projectId": "..."}' class="w-full border border-slate-200 rounded-xl p-2 text-xs font-mono focus:outline-none focus:border-indigo-500"></textarea>
+            <div id="fb-config-box" class="hidden mb-5">
+                <textarea id="firebase-config-input" rows="5" placeholder='{"apiKey": "...", "projectId": "..."}' class="w-full border border-slate-300 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-[#2c52b3]"></textarea>
             </div>
 
             <div class="flex gap-2">
-                <button onclick="saveCloudSettings()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-indigo-700">연동 시작</button>
-                <button id="btn-disconnect" onclick="disconnectCloud()" class="hidden px-4 bg-rose-50 text-rose-600 border border-rose-200 font-bold py-3 rounded-xl text-sm">연동 해제</button>
+                <button onclick="saveCloudSettings()" class="flex-1 bg-[#2c52b3] text-white font-bold py-3.5 rounded-xl text-sm hover:bg-blue-800 transition-colors shadow-sm">연동 시작</button>
+                <button id="btn-disconnect" onclick="disconnectCloud()" class="hidden px-5 bg-rose-50 text-rose-600 border border-rose-200 font-bold py-3.5 rounded-xl text-sm hover:bg-rose-100 transition-colors">연동 해제</button>
             </div>
         </div>
     </div>
 
-    <!-- 외부 문제 데이터 연결 부분 (만들어두신 파일들을 여기에 추가하세요) -->
-    <script src="quizData.js"></script>
-    <script src="quizData_civil_law.js"></script>
-    <script src="quizData_economics.js"></script>
-    <script src="quizData_real_estate.js"></script>
-    <script src="quizData_appraisal.js"></script>
-    <script src="quizData_accounting.js"></script>
+    <!-- 데이터 객체 초기화 (오류 방지용) -->
+    <script>window.quizData = {};</script>
+
+    <!-- 외부 문제 데이터 연결 부분 (오류 방지를 위해 없는 파일은 에러를 무시하도록 처리) -->
+    <script src="quizData_civil_law.js" onerror="console.warn('민법 파일을 찾을 수 없습니다.')"></script>
+    <script src="quizData_economics.js" onerror="console.warn('경제학원론 파일을 찾을 수 없습니다.')"></script>
+    <script src="quizData_real_estate.js" onerror="console.warn('부동산학원론 파일을 찾을 수 없습니다.')"></script>
+    <script src="quizData_valuation_law.js" onerror="console.warn('감정평가관계법규 파일을 찾을 수 없습니다.')"></script>
+    <script src="quizData_accounting.js" onerror="console.warn('회계학 파일을 찾을 수 없습니다.')"></script>
     
     <script>
-        // --- 1. 앱 상태 및 초기화 ---
-        window.quizData = window.quizData || {};
         let allQuestions = {};
-        
-        function flattenData() {
-            allQuestions = {};
-            for (let subj in window.quizData) {
-                window.quizData[subj].forEach(q => {
-                    q.subject = subj;
-                    allQuestions[q.id] = q;
-                });
-            }
-        }
-
         let appState = {
             progress: {}, // { "민법": { currentIdx: 0, shuffledIds: ["id1", ...], correct: 0, wrong: 0 } }
             scrap: []     // ["id1", "id2"]
         };
 
         let currentSubject = null;
+        let isWrongMode = false;
+        let sessionIds = [];
+        let sessionIdx = 0;
+        let sessionCorrect = 0;
+        let sessionWrong = 0;
         let currentQuestionObj = null;
         let isAnswered = false;
 
-        // --- 2. 클라우드 연동 로직 (Firestore) ---
         let roomId = '';
         let dbRef = null;
         let unsubscribe = null;
@@ -184,15 +154,26 @@
             "projectId": "study-tool-web"
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             flattenData();
             loadLocalState();
             renderHome();
             initCloudSync();
         });
 
+        function flattenData() {
+            allQuestions = {};
+            if (!window.quizData) return;
+            for (let subj in window.quizData) {
+                window.quizData[subj].forEach(q => {
+                    q.subject = subj;
+                    allQuestions[q.id] = q;
+                });
+            }
+        }
+
         function loadLocalState() {
-            const stored = localStorage.getItem('mcq_app_state');
+            const stored = localStorage.getItem('cpa_mcq_state');
             if (stored) {
                 try { appState = JSON.parse(stored); } catch(e) {}
             }
@@ -201,13 +182,13 @@
         }
 
         function saveLocalState() {
-            localStorage.setItem('mcq_app_state', JSON.stringify(appState));
+            localStorage.setItem('cpa_mcq_state', JSON.stringify(appState));
             syncToCloud();
         }
 
         function syncToCloud() {
             if (dbRef) {
-                dbRef.set(appState, { merge: true }).catch(e => console.error(e));
+                dbRef.set(appState, { merge: true }).catch(e => console.warn(e));
             }
         }
 
@@ -221,8 +202,8 @@
         }
 
         function initCloudSync() {
-            const savedRoom = localStorage.getItem('mcq_cloud_room');
-            const savedConfigStr = localStorage.getItem('mcq_firebase_config');
+            const savedRoom = localStorage.getItem('cpa_cloud_room');
+            const savedConfigStr = localStorage.getItem('cpa_firebase_config');
             if (!savedRoom || !savedConfigStr) {
                 updateCloudUI(false);
                 return;
@@ -236,7 +217,7 @@
                 if (window.firebase) {
                     if (!firebase.apps.length) firebase.initializeApp(configObj);
                     const db = firebase.firestore();
-                    dbRef = db.collection('mcq_rooms').doc(roomId);
+                    dbRef = db.collection('cpa_mcq_rooms').doc(roomId);
 
                     if(unsubscribe) unsubscribe();
                     unsubscribe = dbRef.onSnapshot(doc => {
@@ -246,13 +227,12 @@
                             if (data.scrap) appState.scrap = data.scrap;
                             
                             if (!document.getElementById('view-home').classList.contains('hidden')) renderHome();
-                            if (!document.getElementById('view-scrap').classList.contains('hidden')) renderScrapbook();
                         } else {
                             syncToCloud();
                         }
                         updateCloudUI(true);
                     }, err => {
-                        console.error(err);
+                        console.warn(err);
                         updateCloudUI(false, "권한 오류");
                     });
                 }
@@ -262,8 +242,8 @@
         }
 
         function openCloudModal() {
-            document.getElementById('cloud-room-id').value = localStorage.getItem('mcq_cloud_room') || '';
-            document.getElementById('firebase-config-input').value = localStorage.getItem('mcq_firebase_config') || '';
+            document.getElementById('cloud-room-id').value = localStorage.getItem('cpa_cloud_room') || '';
+            document.getElementById('firebase-config-input').value = localStorage.getItem('cpa_firebase_config') || '';
             document.getElementById('cloud-modal').classList.remove('hidden');
         }
 
@@ -274,8 +254,8 @@
             if (!room) return alert("스터디룸 코드를 입력하세요.");
             if (room === 'onion10') configStr = JSON.stringify(DEFAULT_ONION_CONFIG);
             else if (!configStr) {
-                if (localStorage.getItem('mcq_firebase_config')) {
-                    configStr = localStorage.getItem('mcq_firebase_config');
+                if (localStorage.getItem('cpa_firebase_config')) {
+                    configStr = localStorage.getItem('cpa_firebase_config');
                 } else {
                     return alert("Firebase 설정을 입력하세요.");
                 }
@@ -284,8 +264,8 @@
             const configObj = parseFirebaseConfigInput(configStr);
             if (!configObj) return alert("Firebase Config 형식이 올바르지 않습니다.");
 
-            localStorage.setItem('mcq_cloud_room', room);
-            localStorage.setItem('mcq_firebase_config', JSON.stringify(configObj, null, 2));
+            localStorage.setItem('cpa_cloud_room', room);
+            localStorage.setItem('cpa_firebase_config', JSON.stringify(configObj, null, 2));
             
             document.getElementById('cloud-modal').classList.add('hidden');
             initCloudSync();
@@ -294,7 +274,7 @@
         function disconnectCloud() {
             if(unsubscribe) unsubscribe();
             dbRef = null;
-            localStorage.removeItem('mcq_cloud_room');
+            localStorage.removeItem('cpa_cloud_room');
             updateCloudUI(false);
             document.getElementById('cloud-modal').classList.add('hidden');
             alert("클라우드 연동이 해제되었습니다.");
@@ -307,26 +287,24 @@
             const disBtn = document.getElementById('btn-disconnect');
             
             if (isConnected) {
-                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-emerald-50 border-emerald-200";
-                icon.className = "fa-solid fa-cloud text-emerald-500";
-                text.className = "text-emerald-700";
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-emerald-500 border-emerald-600 text-white hover:bg-emerald-600";
+                icon.className = "fa-solid fa-cloud text-emerald-100";
+                text.className = "hidden sm:inline text-white";
                 text.textContent = "동기화 중";
                 disBtn.classList.remove('hidden');
             } else {
-                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-slate-50 border-slate-200";
-                icon.className = "fa-solid fa-cloud text-slate-400";
-                text.className = "text-slate-600";
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-white/10 border-white/20 text-white hover:bg-white/20";
+                icon.className = "fa-solid fa-cloud text-indigo-200";
+                text.className = "hidden sm:inline text-white";
                 text.textContent = errMsg ? "오프라인 (오류)" : "오프라인";
                 disBtn.classList.add('hidden');
             }
         }
 
-        // --- 3. UI 네비게이션 및 홈 화면 ---
         function goHome() {
             document.getElementById('view-home').classList.remove('hidden');
             document.getElementById('view-quiz').classList.add('hidden');
-            document.getElementById('view-scrap').classList.add('hidden');
-            flattenData(); // in case new scripts were added
+            flattenData();
             renderHome();
         }
 
@@ -334,38 +312,40 @@
             const list = document.getElementById('subject-list');
             list.innerHTML = '';
             
-            if (Object.keys(window.quizData).length === 0) {
-                list.innerHTML = '<div class="p-5 text-center text-sm text-slate-500 bg-white rounded-xl border border-slate-200">기출문제 데이터가 없습니다.<br>quizData.js 등의 파일을 연결해주세요.</div>';
+            if (!window.quizData || Object.keys(window.quizData).length === 0) {
+                list.innerHTML = `
+                <div class="col-span-full p-10 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+                    기출문제 데이터가 없습니다.<br>과목별 js 파일을 업로드해주세요.
+                </div>`;
                 return;
             }
 
             for (let subj in window.quizData) {
                 const total = window.quizData[subj].length;
                 const prog = appState.progress[subj];
-                let solved = 0;
-                let percent = 0;
+                let solved = prog ? Math.min(prog.currentIdx, total) : 0;
                 
-                if (prog) {
-                    solved = prog.currentIdx;
-                    if (solved > total) solved = total;
-                    percent = Math.round((solved / total) * 100);
-                }
+                const wrongCount = appState.scrap.filter(id => allQuestions[id] && allQuestions[id].subject === subj).length;
 
                 list.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm cursor-pointer hover:border-indigo-400 transition-colors" onclick="startQuiz('${subj}')">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
                         <div>
-                            <h3 class="font-bold text-slate-800 text-lg mb-1">${subj}</h3>
-                            <p class="text-xs text-slate-500 font-medium">진행률: ${percent}% (${solved} / ${total})</p>
+                            <h3 class="font-bold text-slate-800 text-xl mb-1">${subj}</h3>
+                            <p class="text-sm text-slate-500 font-medium">총 ${total}문제 탑재 <span class="text-[#2c52b3] font-bold ml-1">(진행률: ${solved}/${total})</span></p>
                         </div>
-                        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-play"></i>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="startQuiz('${subj}', false)" class="w-full py-3.5 bg-blue-50 text-[#2c52b3] font-bold rounded-xl hover:bg-blue-100 transition-colors">
+                                전체 기출 풀기
+                            </button>
+                            <button onclick="startQuiz('${subj}', true)" class="w-full py-3.5 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors flex justify-center items-center gap-2 ${wrongCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${wrongCount === 0 ? 'disabled' : ''}>
+                                오답노트 풀기 <span class="bg-white text-rose-500 px-2.5 py-0.5 rounded-full text-xs shadow-sm">${wrongCount}</span>
+                            </button>
                         </div>
                     </div>
                 `;
             }
         }
 
-        // --- 4. 퀴즈 진행 로직 ---
         function shuffleArray(array) {
             let curId = array.length, temp, randId;
             while (0 !== curId) {
@@ -378,19 +358,37 @@
             return array;
         }
 
-        function startQuiz(subj) {
+        function startQuiz(subj, wrongMode) {
             currentSubject = subj;
-            const total = window.quizData[subj].length;
+            isWrongMode = wrongMode;
             
-            if (!appState.progress[subj] || appState.progress[subj].currentIdx >= total) {
-                const ids = window.quizData[subj].map(q => q.id);
-                appState.progress[subj] = {
-                    currentIdx: 0,
-                    shuffledIds: shuffleArray(ids),
-                    correct: 0,
-                    wrong: 0
-                };
-                saveLocalState();
+            if (isWrongMode) {
+                let targetIds = appState.scrap.filter(id => allQuestions[id] && allQuestions[id].subject === subj);
+                if (targetIds.length === 0) return;
+                
+                sessionIds = shuffleArray([...targetIds]);
+                sessionIdx = 0;
+                sessionCorrect = 0;
+                sessionWrong = 0;
+                document.getElementById('quiz-badge-mode').classList.remove('hidden');
+            } else {
+                const total = window.quizData[subj].length;
+                if (!appState.progress[subj] || appState.progress[subj].currentIdx >= total) {
+                    const ids = window.quizData[subj].map(q => q.id);
+                    appState.progress[subj] = {
+                        currentIdx: 0,
+                        shuffledIds: shuffleArray(ids),
+                        correct: 0,
+                        wrong: 0
+                    };
+                    saveLocalState();
+                }
+                
+                sessionIds = appState.progress[subj].shuffledIds;
+                sessionIdx = appState.progress[subj].currentIdx;
+                sessionCorrect = 0;
+                sessionWrong = 0;
+                document.getElementById('quiz-badge-mode').classList.add('hidden');
             }
             
             document.getElementById('view-home').classList.add('hidden');
@@ -402,22 +400,29 @@
         }
 
         function renderQuestion() {
-            const prog = appState.progress[currentSubject];
-            prog.shuffledIds = prog.shuffledIds.filter(id => allQuestions[id] !== undefined);
+            const total = sessionIds.length;
             
-            const total = prog.shuffledIds.length;
-            
-            if (prog.currentIdx >= total) {
+            if (sessionIdx >= total) {
                 showResult();
                 return;
             }
 
             isAnswered = false;
-            const qId = prog.shuffledIds[prog.currentIdx];
+            const qId = sessionIds[sessionIdx];
             currentQuestionObj = allQuestions[qId];
 
-            document.getElementById('quiz-progress-text').textContent = `${prog.currentIdx + 1} / ${total}`;
-            document.getElementById('quiz-progress-bar').style.width = `${((prog.currentIdx) / total) * 100}%`;
+            if (!currentQuestionObj) {
+                if(!isWrongMode) {
+                    appState.progress[currentSubject].currentIdx++;
+                    saveLocalState();
+                }
+                sessionIdx++;
+                renderQuestion();
+                return;
+            }
+
+            document.getElementById('quiz-progress-text').textContent = `${sessionIdx + 1} / ${total}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((sessionIdx) / total) * 100}%`;
             
             document.getElementById('quiz-badge-year').textContent = `${currentQuestionObj.year}년 기출`;
             document.getElementById('quiz-badge-subject').textContent = currentQuestionObj.subject;
@@ -446,14 +451,16 @@
 
             if (selectedNum === correctNum) {
                 btnElement.classList.add('option-correct');
-                appState.progress[currentSubject].correct++;
+                sessionCorrect++;
+                if(!isWrongMode) appState.progress[currentSubject].correct++;
             } else {
                 btnElement.classList.add('option-wrong');
                 const ansArray = Array.isArray(correctNum) ? correctNum : [correctNum];
                 ansArray.forEach(ans => {
                     if(buttons[ans - 1]) buttons[ans - 1].classList.add('option-correct');
                 });
-                appState.progress[currentSubject].wrong++;
+                sessionWrong++;
+                if(!isWrongMode) appState.progress[currentSubject].wrong++;
             }
 
             Array.from(buttons).forEach(b => b.disabled = true);
@@ -461,8 +468,11 @@
         }
 
         function nextQuestion() {
-            appState.progress[currentSubject].currentIdx++;
-            saveLocalState();
+            sessionIdx++;
+            if (!isWrongMode) {
+                appState.progress[currentSubject].currentIdx = sessionIdx;
+                saveLocalState();
+            }
             renderQuestion();
         }
 
@@ -472,35 +482,38 @@
             document.getElementById('quiz-options').classList.add('hidden');
             document.getElementById('quiz-actions').classList.add('hidden');
             
-            const prog = appState.progress[currentSubject];
-            const total = prog.shuffledIds.length;
-            const percent = total > 0 ? Math.round((prog.correct / total) * 100) : 0;
+            const total = sessionIds.length;
+            const percent = total > 0 ? Math.round((sessionCorrect / total) * 100) : 0;
             
             document.getElementById('quiz-progress-bar').style.width = `100%`;
-            document.getElementById('quiz-result-score').textContent = `정답률: ${percent}% (맞은 문제: ${prog.correct} / 틀린 문제: ${prog.wrong})`;
+            document.getElementById('quiz-result-score').textContent = `이번 학습 정답률: ${percent}% (맞은 문제: ${sessionCorrect} / 틀린 문제: ${sessionWrong})`;
             document.getElementById('quiz-result').classList.remove('hidden');
             document.getElementById('quiz-result').classList.add('flex');
         }
 
-        function resetSubjectProgress() {
-            const ids = window.quizData[currentSubject].map(q => q.id);
-            appState.progress[currentSubject] = {
-                currentIdx: 0,
-                shuffledIds: shuffleArray(ids),
-                correct: 0,
-                wrong: 0
-            };
-            saveLocalState();
-            
-            document.getElementById('quiz-badge-year').parentElement.classList.remove('hidden');
-            document.getElementById('quiz-question').classList.remove('hidden');
-            document.getElementById('quiz-options').classList.remove('hidden');
-            document.getElementById('quiz-result').classList.add('hidden');
-            document.getElementById('quiz-result').classList.remove('flex');
-            renderQuestion();
+        function restartCurrentSession() {
+            if (isWrongMode) {
+                startQuiz(currentSubject, true);
+            } else {
+                const ids = window.quizData[currentSubject].map(q => q.id);
+                appState.progress[currentSubject] = {
+                    currentIdx: 0,
+                    shuffledIds: shuffleArray(ids),
+                    correct: 0,
+                    wrong: 0
+                };
+                saveLocalState();
+                
+                document.getElementById('quiz-badge-year').parentElement.classList.remove('hidden');
+                document.getElementById('quiz-question').classList.remove('hidden');
+                document.getElementById('quiz-options').classList.remove('hidden');
+                document.getElementById('quiz-result').classList.add('hidden');
+                document.getElementById('quiz-result').classList.remove('flex');
+                
+                startQuiz(currentSubject, false);
+            }
         }
 
-        // --- 5. 오답/스크랩 노트 로직 ---
         function toggleCurrentScrap() {
             if (!currentQuestionObj) return;
             const id = currentQuestionObj.id;
@@ -520,68 +533,11 @@
             if (!currentQuestionObj) return;
             
             if (appState.scrap.includes(currentQuestionObj.id)) {
-                btn.className = "flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-100 text-amber-700 border border-amber-300";
+                btn.className = "flex-1 py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-50 text-amber-600 border border-amber-300";
                 btn.innerHTML = '<i class="fa-solid fa-star"></i> 스크랩 해제';
             } else {
-                btn.className = "flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border border-slate-200 hover:bg-slate-50";
+                btn.className = "flex-1 py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border border-slate-300 hover:bg-slate-50";
                 btn.innerHTML = '<i class="fa-regular fa-star"></i> 오답노트 스크랩';
-            }
-        }
-
-        function goScrapbook() {
-            document.getElementById('view-home').classList.add('hidden');
-            document.getElementById('view-scrap').classList.remove('hidden');
-            renderScrapbook();
-        }
-
-        function renderScrapbook() {
-            const list = document.getElementById('scrap-list');
-            list.innerHTML = '';
-            
-            appState.scrap = appState.scrap.filter(id => allQuestions[id] !== undefined);
-            
-            if (appState.scrap.length === 0) {
-                list.innerHTML = '<div class="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200 text-sm">저장된 오답/스크랩이 없습니다.</div>';
-                return;
-            }
-
-            let grouped = {};
-            appState.scrap.forEach(id => {
-                const q = allQuestions[id];
-                if (q) {
-                    if (!grouped[q.subject]) grouped[q.subject] = [];
-                    grouped[q.subject].push(q);
-                }
-            });
-
-            for (let subj in grouped) {
-                list.innerHTML += `<h3 class="font-bold text-slate-800 mt-4 mb-2 pl-1">${subj}</h3>`;
-                
-                grouped[subj].forEach(q => {
-                    const ansArray = Array.isArray(q.answer) ? q.answer : [q.answer];
-                    let optionsHtml = q.options.map((opt, idx) => {
-                        const isAnswer = ansArray.includes(idx + 1);
-                        return `<div class="p-3 mb-1.5 rounded-lg text-sm ${isAnswer ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200' : 'bg-slate-50 text-slate-600'}">${escapeHtml(opt)}</div>`;
-                    }).join('');
-
-                    list.innerHTML += `
-                        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative">
-                            <button onclick="removeScrapFromList('${q.id}')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-500 text-lg"><i class="fa-solid fa-star"></i></button>
-                            <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded mb-2 inline-block">${q.year}년 기출</span>
-                            <h4 class="font-bold text-slate-800 text-base mb-4 leading-relaxed pr-6 whitespace-pre-wrap">${escapeHtml(q.question)}</h4>
-                            <div class="flex flex-col">${optionsHtml}</div>
-                        </div>
-                    `;
-                });
-            }
-        }
-
-        function removeScrapFromList(id) {
-            const idx = appState.scrap.indexOf(id);
-            if (idx > -1) {
-                appState.scrap.splice(idx, 1);
-                saveLocalState();
-                renderScrapbook();
             }
         }
 
