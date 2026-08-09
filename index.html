@@ -445,12 +445,13 @@
         function executeResetProgress() {
             if (!pendingResetSubject) return;
             
-            delete appState.progress[pendingResetSubject];
+            const subj = pendingResetSubject; // 과목명을 알림창을 위해 잠시 백업
+            delete appState.progress[subj];
             saveLocalState();
             
-            closeResetModal();
+            closeResetModal(); // 여기서 변수가 null로 비워짐
             renderHome();
-            showToast(`'${pendingResetSubject}' 진행률이 초기화되었습니다.`, 'success');
+            showToast(`'${subj}' 진행률이 초기화되었습니다.`, 'success'); // 백업해둔 과목명으로 알림 표시
         }
 
         function goTrash() {
