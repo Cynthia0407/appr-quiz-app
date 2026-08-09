@@ -256,7 +256,8 @@
 
         function syncToCloud() {
             if (dbRef) {
-                dbRef.set(appState, { merge: true }).catch(e => console.error(e));
+                // merge: true 옵션을 제거하여 삭제된 데이터(초기화된 진행률)가 클라우드에도 완벽히 덮어씌워지도록 수정
+                dbRef.set(appState).catch(e => console.error(e));
             }
         }
 
