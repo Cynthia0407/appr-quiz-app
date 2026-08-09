@@ -3,639 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>감정평가사 1차 기출문제 학습기</title>
+    <title>객관식 기출문제 학습기 (클라우드 동기화)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK (Firestore 지원) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f3f4f6;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .whitespace-pre-wrap {
-            white-space: pre-wrap;
-        }
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .option-btn { width: 100%; text-align: left; padding: 1rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; background-color: #ffffff; transition: all 0.2s; margin-bottom: 0.5rem; word-break: keep-all; line-height: 1.5; font-size: 0.95rem; }
+        .option-btn:not(:disabled):hover { background-color: #f8fafc; border-color: #cbd5e1; cursor: pointer; }
+        .option-correct { background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; font-weight: bold; }
+        .option-wrong { background-color: #fff1f2 !important; border-color: #f43f5e !important; color: #9f1239 !important; font-weight: bold; text-decoration: line-through; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="text-gray-800 antialiased h-screen h-[100dvh] flex justify-center bg-gray-100">
+<body class="bg-slate-50 min-h-[100dvh] flex flex-col text-slate-800">
 
-    <div id="app" class="w-full max-w-2xl bg-white h-full flex flex-col shadow-xl relative overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="goHome()">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold"><i class="fa-solid fa-graduation-cap"></i></div>
+                <h1 class="font-bold text-slate-800">객관식 기출문제</h1>
+            </div>
+            <button onclick="openCloudModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-slate-50 border-slate-200" id="cloud-status-btn">
+                <i id="cloud-status-icon" class="fa-solid fa-cloud text-slate-400"></i>
+                <span id="cloud-status-text" class="text-slate-600">오프라인</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Home View -->
+    <main id="view-home" class="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col gap-4">
+        <div class="bg-indigo-900 text-white rounded-2xl p-5 shadow-sm">
+            <h2 class="font-bold text-lg mb-1">과목별 기출문제 풀이</h2>
+            <p class="text-indigo-200 text-sm">클라우드 동기화를 통해 PC와 스마트폰에서 이어서 풀 수 있습니다.</p>
+        </div>
         
-        <!-- Header -->
-        <header class="bg-blue-800 text-white p-4 flex justify-between items-center shadow z-10 flex-shrink-0">
-            <h1 class="text-lg font-bold tracking-tight">감정평가사 1차 기출학습</h1>
-            <div class="flex gap-2">
-                <button id="cloud-status" onclick="openLoginModal && openLoginModal()" class="text-sm bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded transition font-medium border border-blue-600">
-                    ☁️ 클라우드 로그인
-                </button>
-                <button onclick="goHome()" class="text-sm bg-blue-700 hover:bg-blue-600 px-3 py-1.5 rounded transition">
-                    홈으로
-                </button>
-            </div>
-        </header>
+        <div class="flex justify-between items-center mt-2">
+            <h3 class="font-bold text-slate-700">학습 과목</h3>
+            <button onclick="goScrapbook()" class="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-xl text-sm flex items-center gap-1 hover:bg-amber-200 transition-colors">
+                <i class="fa-solid fa-star"></i> 오답/스크랩 노트
+            </button>
+        </div>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-5 relative">
+        <div id="subject-list" class="grid grid-cols-1 gap-3">
+            <!-- Subjects -->
+        </div>
+    </main>
+
+    <!-- Quiz View -->
+    <main id="view-quiz" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <button onclick="goHome()" class="text-slate-500 hover:text-slate-800 font-bold text-sm"><i class="fa-solid fa-arrow-left mr-1"></i>목록으로</button>
+            <div class="text-sm font-bold text-slate-500" id="quiz-progress-text">0 / 0</div>
+        </div>
+        
+        <div class="w-full bg-slate-200 rounded-full h-1.5 mb-6">
+            <div id="quiz-progress-bar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <span id="quiz-badge-year" class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded">2020년 기출</span>
+                <span id="quiz-badge-subject" class="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded">과목명</span>
+            </div>
+            <h2 id="quiz-question" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed mb-6 whitespace-pre-wrap">문제 내용</h2>
             
-            <!-- Home Screen: Subject Selection -->
-            <div id="screen-home" class="flex flex-col space-y-8 animate-fade-in">
-                <div class="text-center py-6">
-                    <h2 class="text-2xl font-extrabold text-gray-800 mb-2">과목별 기출문제 풀이</h2>
-                    <p class="text-gray-500 text-sm">풀이할 과목과 모드를 선택해주세요.<br>(현재 2026년 샘플 데이터 탑재)</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="subject-cards">
-                    <!-- Cards will be injected via JS -->
-                </div>
+            <div id="quiz-options" class="flex flex-col">
+                <!-- Options -->
             </div>
+        </div>
 
-            <!-- Quiz Screen -->
-            <div id="screen-quiz" class="hidden flex-col h-full animate-fade-in">
-                <div class="mb-4 flex justify-between items-center text-sm font-semibold text-gray-500 border-b pb-2">
-                    <span id="quiz-subtitle" class="bg-blue-100 text-blue-800 px-2 py-1 rounded">민법 - 전체풀이</span>
-                    <span id="quiz-progress">1 / 10</span>
-                </div>
-                
-                <div class="flex-1">
-                    <div id="question-text" class="text-lg font-semibold leading-relaxed mb-6 whitespace-pre-wrap">
-                        <!-- Question goes here -->
-                    </div>
-                    
-                    <div id="options-container" class="flex flex-col space-y-3">
-                        <!-- Options go here -->
-                    </div>
-
-                    <!-- ADDED: 피드백 및 수동 스크랩 영역 -->
-                    <div id="feedback-container" class="hidden mt-6 p-4 rounded-lg bg-gray-50 border transition-all">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Result Screen -->
-            <div id="screen-result" class="hidden flex-col h-full animate-fade-in">
-                <div class="text-center py-8 bg-gray-50 rounded-xl mb-6 shadow-inner">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">학습 결과</h2>
-                    <p class="text-gray-600 text-lg">총 <span id="res-total" class="font-bold">0</span>문제 중 <span id="res-correct" class="text-blue-600 font-bold text-xl">0</span>문제 정답!</p>
-                </div>
-                
-                <h3 class="font-bold text-lg mb-4 text-red-600 border-b pb-2">틀린 문제 확인 (스크랩은 문제 풀이 화면에서 설정)</h3>
-                <div id="incorrect-list" class="flex flex-col space-y-6">
-                    <!-- Incorrect items go here -->
-                </div>
-
-                <div class="mt-8 text-center">
-                    <button onclick="goHome()" class="bg-blue-800 text-white font-bold text-lg px-8 py-3 rounded-lg shadow hover:bg-blue-700 transition w-full sm:w-auto">
-                        학습 종료 및 홈으로
-                    </button>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Quiz Footer (Navigation Controls) -->
-        <div id="quiz-footer" class="hidden flex-shrink-0 w-full bg-white border-t p-4 flex justify-between shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
-            <button onclick="prevQuestion()" id="btn-prev" class="px-5 py-2.5 rounded-lg font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 transition">
-                이전
-            </button>
-            <button onclick="nextQuestion()" id="btn-next" class="px-5 py-2.5 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition">
-                다음
+        <!-- Post-Answer Actions -->
+        <div id="quiz-actions" class="hidden flex gap-2 mt-2 pb-8">
+            <button id="btn-scrap-toggle" onclick="toggleCurrentScrap()" class="flex-1 py-3.5 rounded-xl font-bold text-sm border-2 transition-colors flex items-center justify-center gap-2"></button>
+            <button onclick="nextQuestion()" class="flex-1 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                다음 문제 <i class="fa-solid fa-arrow-right"></i>
             </button>
         </div>
-
-        <!-- Custom Modal -->
-        <div id="custom-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center hidden z-50 transition-opacity">
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-11/12 text-center transform scale-100 transition-transform">
-                <p id="modal-message" class="mb-6 text-gray-800 font-medium whitespace-pre-wrap"></p>
-                <div id="modal-buttons" class="flex gap-2 justify-center">
-                    <button id="modal-btn-confirm" class="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">확인</button>
-                    <button id="modal-btn-cancel" class="hidden w-full bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-300 transition">취소</button>
-                </div>
+        
+        <!-- Result Screen -->
+        <div id="quiz-result" class="hidden flex-col items-center justify-center py-10">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center text-3xl mb-4"><i class="fa-solid fa-flag-checkered"></i></div>
+            <h2 class="text-xl font-bold text-slate-800 mb-2">과목 학습 완료!</h2>
+            <p class="text-slate-500 text-sm mb-6" id="quiz-result-score">정답률: 0%</p>
+            <div class="flex gap-2 w-full">
+                <button onclick="goHome()" class="flex-1 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl">목록으로</button>
+                <button onclick="resetSubjectProgress()" class="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl">처음부터 다시</button>
             </div>
         </div>
+    </main>
 
-        <!-- 로그인/동기화 Modal -->
-        <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center hidden z-50 transition-opacity">
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-11/12 transform scale-100 transition-transform">
-                <h3 class="text-xl font-bold text-gray-800 mb-2">클라우드 연동</h3>
-                <p class="text-sm text-gray-500 mb-4">본인만의 고유한 <b>로그인 코드(영어/숫자)</b>를 입력하세요.<br>기존 코드를 입력하면 저장된 진행률과 오답노트를 불러오고, 새 코드를 입력하면 현재 기기의 기록이 새롭게 백업됩니다.</p>
-                <input type="text" id="login-code-input" placeholder="예: user1234" class="w-full px-4 py-3 rounded-lg border border-gray-300 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                
-                <!-- ADDED: Firebase Config Area -->
-                <div class="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-xl flex flex-col gap-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-gray-700 text-sm">개인 Firebase 설정 (선택)</span>
-                        <button type="button" onclick="document.getElementById('firebase-config-wrapper').classList.toggle('hidden')" class="text-xs font-bold text-blue-600 hover:underline">
-                            ⚙️ 직접 입력
-                        </button>
-                    </div>
-                    <div id="firebase-config-wrapper" class="hidden flex flex-col gap-1 mt-1">
-                        <p class="text-gray-500 text-[11px] mb-1">첨부하신 파일처럼 본인만의 Firebase 콘솔 웹 SDK 연동 코드(JSON)를 복사해서 붙여넣으실 수 있습니다. (※ 시스템 규칙에 따라 내부적으로는 <b>Firestore</b>를 사용합니다)</p>
-                        <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "projectId": "..."}' class="w-full p-2 text-[11px] font-mono bg-white border border-gray-300 rounded-lg focus:outline-none"></textarea>
-                    </div>
-                </div>
+    <!-- Scrapbook View -->
+    <main id="view-scrap" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col">
+        <div class="flex items-center justify-between mb-6">
+            <button onclick="goHome()" class="text-slate-500 hover:text-slate-800 font-bold text-sm"><i class="fa-solid fa-arrow-left mr-1"></i>뒤로</button>
+            <h2 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-star text-amber-400 mr-1"></i>오답/스크랩 노트</h2>
+        </div>
+        
+        <div id="scrap-list" class="flex flex-col gap-4 pb-8">
+            <!-- Scraps -->
+        </div>
+    </main>
 
-                <div class="flex gap-2 justify-center">
-                    <button onclick="processLoginCode && processLoginCode()" class="w-full bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition">연동 시작</button>
-                    <button onclick="closeLoginModal && closeLoginModal()" class="w-full bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-300 transition">닫기</button>
-                </div>
+    <!-- Cloud Modal -->
+    <div id="cloud-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-cloud text-indigo-600 mr-2"></i>클라우드 동기화 설정</h3>
+                <button onclick="document.getElementById('cloud-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4 bg-slate-50 p-3 rounded-lg">동일한 스터디룸 코드와 Firebase(Firestore) 설정을 입력하면 기기 간에 진행률 및 오답노트가 실시간으로 동기화됩니다.</p>
+            
+            <label class="block text-xs font-bold text-slate-700 mb-1">스터디룸 코드 (자유롭게 입력)</label>
+            <input type="text" id="cloud-room-id" placeholder="예: my-study-2026" class="w-full border border-slate-200 rounded-xl p-3 text-sm mb-4 focus:outline-none focus:border-indigo-500">
+            
+            <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-700">Firebase 설정 (JSON)</label>
+                <button onclick="document.getElementById('fb-config-box').classList.toggle('hidden')" class="text-[11px] text-indigo-600 font-bold hover:underline">⚙️ 설정 변경/확인</button>
+            </div>
+            <div id="fb-config-box" class="hidden mb-4">
+                <textarea id="firebase-config-input" rows="4" placeholder='{"apiKey": "...", "projectId": "..."}' class="w-full border border-slate-200 rounded-xl p-2 text-xs font-mono focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="saveCloudSettings()" class="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm hover:bg-indigo-700">연동 시작</button>
+                <button id="btn-disconnect" onclick="disconnectCloud()" class="hidden px-4 bg-rose-50 text-rose-600 border border-rose-200 font-bold py-3 rounded-xl text-sm">연동 해제</button>
             </div>
         </div>
-
     </div>
 
-    <!-- 1단계: 과목별 데이터를 담을 전체 바구니(객체) 만들기 -->
+    <!-- 외부 문제 데이터 연결 부분 (만들어두신 파일들을 여기에 추가하세요) -->
+    <script src="quizData.js"></script>
+    <script src="quizData_civil_law.js"></script>
+    <script src="quizData_economics.js"></script>
+    <script src="quizData_real_estate.js"></script>
+    <script src="quizData_appraisal.js"></script>
+    <script src="quizData_accounting.js"></script>
+    
     <script>
-        window.quizData = {};
-    </script>
-
-    <!-- 2단계: 과목별 분리된 JS 파일 연결하기 -->
-    <!-- 깃허브에 올리신 파일 이름과 똑같이 적어주시면 됩니다. 아직 안 올린 파일은 에러 없이 무시됩니다. -->
-    <script src="quizData_civil_law.js"></script>       <!-- 민법 -->
-    <script src="quizData_economics.js"></script>       <!-- 경제학원론 -->
-    <script src="quizData_real_estate.js"></script>     <!-- 부동산학원론 -->
-    <script src="quizData_valuation_law.js"></script>   <!-- 감정평가관계법규 -->
-    <script src="quizData_accounting.js"></script>      <!-- 회계학 -->
-
-    <script>
-        // ==========================================
-        // 1. Data Definitions
-        // 데이터는 위의 과목별 js 파일에서 자동으로 합쳐져 불러와집니다.
-        // ==========================================
-        let subjects = [];
-
-        // ==========================================
-        // 2. Application State Variables
-        // ==========================================
-        let currentSubject = "";
-        let isIncorrectMode = false;
-        let questionList = [];
-        let currentQuestionIndex = 0;
-        let userAnswers = {}; // Mapping of question id to selected option number (1-5)
-        let gradedStatus = {}; // ADDED: 문제별 채점 여부 추적
-
-        // ==========================================
-        // 3. UI Initialization & Navigation
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            // 연결된 파일들에서 수집된 과목 이름들 추출
-            subjects = Object.keys(window.quizData);
-            
-            if (subjects.length === 0) {
-                const container = document.getElementById('subject-cards');
-                container.innerHTML = '<div class="col-span-1 sm:col-span-2 text-center py-10 text-gray-500 bg-white rounded-xl border">아직 등록된 과목 데이터가 없습니다.<br>과목별 js 파일을 깃허브에 업로드해주세요.</div>';
-                return;
-            }
-
-            renderHomeCards();
-        });
-
-        function getProgress(subject, isIncorrect) {
-            const progressData = JSON.parse(localStorage.getItem('cpa_progress') || '{}');
-            const key = `${subject}_${isIncorrect}`;
-            return progressData[key];
-        }
-
-        function renderHomeCards() {
-            const container = document.getElementById('subject-cards');
-            container.innerHTML = '';
-            
-            subjects.forEach(subject => {
-                const totalQuestions = quizData[subject].length;
-                const incorrectCount = (getIncorrectNote()[subject] || []).length;
-                
-                const normalProgress = getProgress(subject, false);
-                const incorrectProgress = getProgress(subject, true);
-
-                let normalText = `총 ${totalQuestions}문제 탑재`;
-                if (normalProgress) {
-                    const gradedCount = Object.keys(normalProgress.gradedStatus || {}).length;
-                    normalText += ` <span class="text-blue-600 font-bold ml-1">(진행률: ${gradedCount}/${normalProgress.questionList.length})</span>`;
-                }
-
-                let incorrectText = `오답노트 풀기 <span class="ml-2 bg-red-200 text-red-800 text-xs px-2 py-0.5 rounded-full">${incorrectCount}</span>`;
-                if (incorrectProgress && incorrectCount > 0) {
-                    const gradedCount = Object.keys(incorrectProgress.gradedStatus || {}).length;
-                    incorrectText += ` <span class="text-red-600 font-bold text-xs ml-1">(${gradedCount}/${incorrectProgress.questionList.length})</span>`;
-                }
-                
-                const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
-                card.innerHTML = `
-                    <div class="mb-4">
-                        <h3 class="text-xl font-bold text-gray-800">${subject}</h3>
-                        <p class="text-sm text-gray-500 mt-1">${normalText}</p>
-                    </div>
-                    <div class="flex flex-col space-y-2">
-                        <button onclick="startQuiz('${subject}', false)" class="w-full bg-blue-50 text-blue-700 font-medium py-2 rounded-lg hover:bg-blue-100 transition">
-                            전체 기출 풀기
-                        </button>
-                        <button onclick="startQuiz('${subject}', true)" class="w-full bg-red-50 text-red-700 font-medium py-2 rounded-lg hover:bg-red-100 transition flex justify-center items-center">
-                            ${incorrectText}
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function goHome() {
-            hideAllScreens();
-            document.getElementById('screen-home').classList.remove('hidden');
-            document.getElementById('quiz-footer').classList.add('hidden');
-            renderHomeCards();
-        }
-
-        function hideAllScreens() {
-            document.getElementById('screen-home').classList.add('hidden');
-            document.getElementById('screen-quiz').classList.add('hidden');
-            document.getElementById('screen-result').classList.add('hidden');
-        }
-
-        function shuffleArray(array) {
-            const arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
-        // ==========================================
-        // 4. Quiz Execution Logic
-        // ==========================================
-        function startQuiz(subject, incorrectMode) {
-            const savedProgress = getProgress(subject, incorrectMode);
-            
-            if (savedProgress) {
-                showConfirm(
-                    `[${subject}] 이전에 풀던 내역이 있습니다.\n이어서 푸시겠습니까?`,
-                    () => {
-                        // 이어서 풀기
-                        currentSubject = subject;
-                        isIncorrectMode = incorrectMode;
-                        questionList = savedProgress.questionList;
-                        currentQuestionIndex = savedProgress.currentQuestionIndex;
-                        userAnswers = savedProgress.userAnswers;
-                        gradedStatus = savedProgress.gradedStatus;
-                        setupQuizUI(subject, incorrectMode);
-                    },
-                    () => {
-                        // 새로 풀기
-                        initNewQuiz(subject, incorrectMode);
-                    }
-                );
-            } else {
-                initNewQuiz(subject, incorrectMode);
-            }
-        }
-
-        function initNewQuiz(subject, incorrectMode) {
-            currentSubject = subject;
-            isIncorrectMode = incorrectMode;
-            userAnswers = {};
-            gradedStatus = {};
-            currentQuestionIndex = 0;
-
-            if (isIncorrectMode) {
-                const incorrectIds = getIncorrectNote()[subject] || [];
-                // 기존 기출문제 목록에서 오답ID에 해당하는 문제 필터링
-                const filtered = quizData[subject].filter(q => incorrectIds.includes(q.id));
-                if (filtered.length === 0) {
-                    showModal(`[${subject}] 저장된 오답노트가 없습니다.\n먼저 기출문제를 풀어보세요!`);
-                    return;
-                }
-                questionList = shuffleArray(filtered); // 랜덤 출제
-            } else {
-                questionList = shuffleArray(quizData[subject]); // 랜덤 출제
-            }
-            
-            saveProgress();
-            setupQuizUI(subject, incorrectMode);
-        }
-
-        function setupQuizUI(subject, incorrectMode) {
-            // Set UI
-            hideAllScreens();
-            document.getElementById('screen-quiz').classList.remove('hidden');
-            document.getElementById('quiz-footer').classList.remove('hidden');
-            
-            document.getElementById('quiz-subtitle').innerText = `${subject} - ${incorrectMode ? '오답노트' : '전체풀이'}`;
-            
-            renderQuestion();
-        }
-
-        function renderQuestion() {
-            const q = questionList[currentQuestionIndex];
-            
-            // Progress update
-            document.getElementById('quiz-progress').innerText = `${currentQuestionIndex + 1} / ${questionList.length}`;
-            
-            // Text update: 연도 병기
-            document.getElementById('question-text').innerText = `[${q.year}년] ${q.question}`;
-            
-            // Options update
-            const optionsContainer = document.getElementById('options-container');
-            optionsContainer.innerHTML = '';
-            
-            const isGraded = gradedStatus[q.id]; // 현재 문제 채점 여부
-            
-            q.options.forEach((optText, index) => {
-                const optNum = index + 1;
-                const isSelected = userAnswers[q.id] === optNum;
-                const isCorrectAns = q.answer === optNum;
-                
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left p-4 rounded-lg border transition-all text-base `;
-                
-                if (isGraded) {
-                    btn.disabled = true; // 채점 후 클릭 방지
-                    if (isCorrectAns) {
-                        btn.className += 'bg-green-50 border-green-500 text-green-900 ring-2 ring-green-200 font-bold';
-                    } else if (isSelected && !isCorrectAns) {
-                        btn.className += 'bg-red-50 border-red-500 text-red-900 line-through';
-                    } else {
-                        btn.className += 'bg-gray-50 border-gray-200 text-gray-400';
-                    }
-                } else {
-                    btn.className += isSelected ? 'bg-blue-50 border-blue-500 text-blue-900 ring-2 ring-blue-200' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50';
-                    btn.onclick = () => selectOption(q.id, optNum);
-                }
-                
-                btn.innerText = optText;
-                optionsContainer.appendChild(btn);
-            });
-
-            // Feedback Area (피드백 및 수동 스크랩 버튼)
-            const feedbackContainer = document.getElementById('feedback-container');
-            if (isGraded) {
-                feedbackContainer.classList.remove('hidden');
-                feedbackContainer.classList.add('flex', 'flex-col', 'sm:flex-row', 'gap-4'); // 명시적 디스플레이 속성 부여
-                
-                const isCorrect = userAnswers[q.id] === q.answer;
-                
-                // 현재 스크랩 상태 확인
-                const note = getIncorrectNote();
-                const isScrapped = note[currentSubject] && note[currentSubject].includes(q.id);
-                
-                feedbackContainer.innerHTML = `
-                    <div class="flex-1 flex items-center">
-                        <span class="text-lg font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}">
-                            ${isCorrect ? '정답입니다!' : '오답입니다.'}
-                        </span>
-                    </div>
-                    <button onclick="toggleScrap('${q.id}')" class="flex-shrink-0 flex items-center justify-center px-4 py-2 rounded-lg font-bold border transition-colors ${isScrapped ? 'bg-yellow-100 border-yellow-400 text-yellow-800' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-100'}">
-                        ${isScrapped ? '★ 오답노트 저장됨' : '☆ 오답노트에 스크랩'}
-                    </button>
-                `;
-            } else {
-                feedbackContainer.classList.add('hidden');
-                feedbackContainer.classList.remove('flex', 'flex-col', 'sm:flex-row', 'gap-4');
-                feedbackContainer.innerHTML = '';
-            }
-
-            // Update footer buttons
-            const btnPrev = document.getElementById('btn-prev');
-            const btnNext = document.getElementById('btn-next');
-            
-            btnPrev.style.visibility = currentQuestionIndex === 0 ? 'hidden' : 'visible';
-            
-            if (!isGraded) {
-                btnNext.innerText = "정답 확인";
-                btnNext.className = "px-5 py-2.5 rounded-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition";
-                btnNext.onclick = checkAnswer;
-            } else {
-                if (currentQuestionIndex === questionList.length - 1) {
-                    btnNext.innerText = "결과 보기";
-                    btnNext.className = "px-5 py-2.5 rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 transition";
-                    btnNext.onclick = submitQuiz;
-                } else {
-                    btnNext.innerText = "다음 문제";
-                    btnNext.className = "px-5 py-2.5 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition";
-                    btnNext.onclick = nextQuestion;
-                }
-            }
-        }
-
-        function selectOption(questionId, optionNumber) {
-            if (gradedStatus[questionId]) return; // 이미 채점된 경우 변경 불가
-            userAnswers[questionId] = optionNumber;
-            saveProgress();
-            renderQuestion(); // Re-render to show selected state
-        }
-
-        // ADDED: 개별 문제 정답 확인
-        function checkAnswer() {
-            const currentQ = questionList[currentQuestionIndex];
-            if (!userAnswers[currentQ.id]) {
-                showModal("정답을 선택해주세요.");
-                return;
-            }
-            gradedStatus[currentQ.id] = true;
-            saveProgress();
-            renderQuestion();
-        }
-
-        // ADDED: 수동 스크랩 토글 기능
-        function toggleScrap(questionId) {
-            let note = getIncorrectNote();
-            if (!note[currentSubject]) note[currentSubject] = [];
-            
-            const index = note[currentSubject].indexOf(questionId);
-            if (index > -1) {
-                note[currentSubject].splice(index, 1); // 스크랩 해제
-            } else {
-                note[currentSubject].push(questionId); // 스크랩 추가
-            }
-            saveIncorrectNote(note);
-            renderQuestion(); // UI 업데이트
-        }
-
-        function prevQuestion() {
-            if (currentQuestionIndex > 0) {
-                currentQuestionIndex--;
-                saveProgress();
-                renderQuestion();
-            }
-        }
-
-        function nextQuestion() {
-            if (currentQuestionIndex < questionList.length - 1) {
-                currentQuestionIndex++;
-                saveProgress();
-                renderQuestion();
-            }
-        }
-
-        // ==========================================
-        // 5. Grading and Local Storage (Incorrect Note)
-        // ==========================================
-        function submitQuiz() {
-            let score = 0;
-            let newlyIncorrect = [];
-
-            questionList.forEach(q => {
-                if (userAnswers[q.id] === q.answer) {
-                    score++;
-                } else {
-                    newlyIncorrect.push(q);
-                }
-            });
-
-            // 수동 스크랩 기능 도입으로, 제출 시 자동 저장/삭제 로직은 제거됨
-            clearProgress(currentSubject, isIncorrectMode);
-            renderResult(score, newlyIncorrect);
-        }
-
-        function renderResult(score, incorrectQuestions) {
-            hideAllScreens();
-            document.getElementById('quiz-footer').classList.add('hidden');
-            document.getElementById('screen-result').classList.remove('hidden');
-
-            document.getElementById('res-total').innerText = questionList.length;
-            document.getElementById('res-correct').innerText = score;
-
-            const listContainer = document.getElementById('incorrect-list');
-            listContainer.innerHTML = '';
-
-            if (incorrectQuestions.length === 0) {
-                listContainer.innerHTML = `<div class="p-6 bg-green-50 text-green-800 rounded-xl text-center font-semibold">축하합니다! 모든 문제를 맞히셨습니다.</div>`;
-                return;
-            }
-
-            incorrectQuestions.forEach(q => {
-                const userAns = userAnswers[q.id];
-                const realAns = q.answer;
-                
-                const item = document.createElement('div');
-                item.className = "bg-white p-5 rounded-xl shadow-sm border border-red-100";
-                
-                let optionsHtml = q.options.map((optText, idx) => {
-                    const optNum = idx + 1;
-                    let style = "text-gray-600";
-                    let badge = "";
-                    if (optNum === realAns) {
-                        style = "text-blue-700 font-bold bg-blue-50 p-2 rounded";
-                        badge = " <span class='text-xs text-white bg-blue-500 px-2 py-0.5 rounded ml-2'>정답</span>";
-                    } else if (optNum === userAns) {
-                        style = "text-red-600 font-bold line-through bg-red-50 p-2 rounded";
-                        badge = " <span class='text-xs text-white bg-red-500 px-2 py-0.5 rounded ml-2'>선택함</span>";
-                    }
-                    return `<div class="mb-1 ${style}">${optText}${badge}</div>`;
-                }).join('');
-
-                item.innerHTML = `
-                    <p class="font-bold text-gray-800 mb-3 whitespace-pre-wrap">${q.question}</p>
-                    <div class="text-sm space-y-1 bg-gray-50 p-3 rounded-lg border">
-                        ${optionsHtml}
-                    </div>
-                `;
-                listContainer.appendChild(item);
-            });
-        }
-
-        // ==========================================
-        // 6. Helpers (Modal & LocalStorage)
-        // ==========================================
-        function saveProgress() {
-            const progressData = JSON.parse(localStorage.getItem('cpa_progress') || '{}');
-            const key = `${currentSubject}_${isIncorrectMode}`;
-            progressData[key] = {
-                questionList: questionList,
-                currentQuestionIndex: currentQuestionIndex,
-                userAnswers: userAnswers,
-                gradedStatus: gradedStatus
-            };
-            localStorage.setItem('cpa_progress', JSON.stringify(progressData));
-            if(window.syncDataToCloud) window.syncDataToCloud();
-        }
-
-        function clearProgress(subject, isIncorrect) {
-            const progressData = JSON.parse(localStorage.getItem('cpa_progress') || '{}');
-            const key = `${subject}_${isIncorrect}`;
-            delete progressData[key];
-            localStorage.setItem('cpa_progress', JSON.stringify(progressData));
-            if(window.syncDataToCloud) window.syncDataToCloud();
-        }
-
-        function getIncorrectNote() {
-            const data = localStorage.getItem('cpa_incorrect_note');
-            return data ? JSON.parse(data) : {};
-        }
-
-        function saveIncorrectNote(data) {
-            localStorage.setItem('cpa_incorrect_note', JSON.stringify(data));
-            if(window.syncDataToCloud) window.syncDataToCloud();
-        }
-
-        function showModal(msg) {
-            document.getElementById('modal-message').innerText = msg;
-            
-            const btnConfirm = document.getElementById('modal-btn-confirm');
-            const btnCancel = document.getElementById('modal-btn-cancel');
-            
-            btnCancel.classList.add('hidden');
-            btnConfirm.innerText = "확인";
-            btnConfirm.onclick = closeModal;
-            
-            document.getElementById('custom-modal').classList.remove('hidden');
-        }
-
-        function showConfirm(msg, onConfirm, onCancel) {
-            document.getElementById('modal-message').innerText = msg;
-            
-            const btnConfirm = document.getElementById('modal-btn-confirm');
-            const btnCancel = document.getElementById('modal-btn-cancel');
-            
-            btnCancel.classList.remove('hidden');
-            btnConfirm.innerText = "예 (이어서 풀기)";
-            btnCancel.innerText = "아니오 (새로 풀기)";
-            
-            btnConfirm.onclick = () => {
-                closeModal();
-                if(onConfirm) onConfirm();
-            };
-            
-            btnCancel.onclick = () => {
-                closeModal();
-                if(onCancel) onCancel();
-            };
-            
-            document.getElementById('custom-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
-        }
-
-    </script>
-
-    <!-- 클라우드 저장 및 연동을 위한 파이어베이스 로직 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cpa-quiz-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // --- 1. 앱 상태 및 초기화 ---
+        window.quizData = window.quizData || {};
+        let allQuestions = {};
         
-        let app, auth, db;
-        try {
-            if(Object.keys(firebaseConfig).length > 0) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        function flattenData() {
+            allQuestions = {};
+            for (let subj in window.quizData) {
+                window.quizData[subj].forEach(q => {
+                    q.subject = subj;
+                    allQuestions[q.id] = q;
+                });
             }
-        } catch(e) {
-            console.warn("파이어베이스 초기화 실패:", e);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedConfig = localStorage.getItem('cpa_firebase_config');
-            if (savedConfig) {
-                const fbInput = document.getElementById('firebase-config-input');
-                if (fbInput) fbInput.value = savedConfig;
-            }
+        let appState = {
+            progress: {}, // { "민법": { currentIdx: 0, shuffledIds: ["id1", ...], correct: 0, wrong: 0 } }
+            scrap: []     // ["id1", "id2"]
+        };
+
+        let currentSubject = null;
+        let currentQuestionObj = null;
+        let isAnswered = false;
+
+        // --- 2. 클라우드 연동 로직 (Firestore) ---
+        let roomId = '';
+        let dbRef = null;
+        let unsubscribe = null;
+
+        const DEFAULT_ONION_CONFIG = {
+            "apiKey": "AIzaSyCMcFSFT_iHYiMay8Bq6J23gvErssVLmVc",
+            "authDomain": "study-tool-web.firebaseapp.com",
+            "projectId": "study-tool-web"
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            flattenData();
+            loadLocalState();
+            renderHome();
+            initCloudSync();
         });
+
+        function loadLocalState() {
+            const stored = localStorage.getItem('mcq_app_state');
+            if (stored) {
+                try { appState = JSON.parse(stored); } catch(e) {}
+            }
+            if (!appState.progress) appState.progress = {};
+            if (!appState.scrap) appState.scrap = [];
+        }
+
+        function saveLocalState() {
+            localStorage.setItem('mcq_app_state', JSON.stringify(appState));
+            syncToCloud();
+        }
+
+        function syncToCloud() {
+            if (dbRef) {
+                dbRef.set(appState, { merge: true }).catch(e => console.error(e));
+            }
+        }
 
         function parseFirebaseConfigInput(inputStr) {
             if (!inputStr) return null;
@@ -646,136 +220,376 @@
             try { return JSON.parse(objStr); } catch (e) { return null; }
         }
 
-        window.currentLoginCode = null;
-
-        window.authenticateFirebase = async function(targetAuth) {
-            const authToUse = targetAuth || auth;
-            if (!authToUse) return false;
-            if (authToUse.currentUser) return true;
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && authToUse === auth) {
-                    await signInWithCustomToken(authToUse, __initial_auth_token);
-                } else {
-                    await signInAnonymously(authToUse);
-                }
-                return true;
-            } catch(e) {
-                console.error("Auth error:", e);
-                return false;
-            }
-        };
-
-        window.openLoginModal = function() {
-            document.getElementById('login-modal').classList.remove('hidden');
-        };
-
-        window.closeLoginModal = function() {
-            document.getElementById('login-modal').classList.add('hidden');
-        };
-
-        window.processLoginCode = async function() {
-            const code = document.getElementById('login-code-input').value.trim();
-            if(!code) {
-                if(window.showModal) window.showModal("로그인 코드를 입력해주세요.");
+        function initCloudSync() {
+            const savedRoom = localStorage.getItem('mcq_cloud_room');
+            const savedConfigStr = localStorage.getItem('mcq_firebase_config');
+            if (!savedRoom || !savedConfigStr) {
+                updateCloudUI(false);
                 return;
             }
-            
-            const configStr = document.getElementById('firebase-config-input').value.trim();
-            let currentApp = app;
-            let currentDb = db;
-            let currentAuth = auth;
+            roomId = savedRoom;
 
-            if (configStr) {
-                const configObj = parseFirebaseConfigInput(configStr);
-                if (!configObj) {
-                    if(window.showModal) window.showModal("Firebase 설정 형식이 올바르지 않습니다. (JSON 형식 필요)");
-                    return;
+            const configObj = parseFirebaseConfigInput(savedConfigStr);
+            if (!configObj) return;
+
+            try {
+                if (window.firebase) {
+                    if (!firebase.apps.length) firebase.initializeApp(configObj);
+                    const db = firebase.firestore();
+                    dbRef = db.collection('mcq_rooms').doc(roomId);
+
+                    if(unsubscribe) unsubscribe();
+                    unsubscribe = dbRef.onSnapshot(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            if (data.progress) appState.progress = data.progress;
+                            if (data.scrap) appState.scrap = data.scrap;
+                            
+                            if (!document.getElementById('view-home').classList.contains('hidden')) renderHome();
+                            if (!document.getElementById('view-scrap').classList.contains('hidden')) renderScrapbook();
+                        } else {
+                            syncToCloud();
+                        }
+                        updateCloudUI(true);
+                    }, err => {
+                        console.error(err);
+                        updateCloudUI(false, "권한 오류");
+                    });
                 }
-                localStorage.setItem('cpa_firebase_config', JSON.stringify(configObj, null, 2));
-                try {
-                    currentApp = initializeApp(configObj, "CustomApp_" + Date.now());
-                    currentAuth = getAuth(currentApp);
-                    currentDb = getFirestore(currentApp);
-                } catch(e) {
-                    console.error(e);
-                    if(window.showModal) window.showModal("입력하신 설정으로 Firebase를 초기화하는데 실패했습니다.");
-                    return;
+            } catch(err) {
+                updateCloudUI(false, "설정 오류");
+            }
+        }
+
+        function openCloudModal() {
+            document.getElementById('cloud-room-id').value = localStorage.getItem('mcq_cloud_room') || '';
+            document.getElementById('firebase-config-input').value = localStorage.getItem('mcq_firebase_config') || '';
+            document.getElementById('cloud-modal').classList.remove('hidden');
+        }
+
+        function saveCloudSettings() {
+            let room = document.getElementById('cloud-room-id').value.trim();
+            let configStr = document.getElementById('firebase-config-input').value.trim();
+            
+            if (!room) return alert("스터디룸 코드를 입력하세요.");
+            if (room === 'onion10') configStr = JSON.stringify(DEFAULT_ONION_CONFIG);
+            else if (!configStr) {
+                if (localStorage.getItem('mcq_firebase_config')) {
+                    configStr = localStorage.getItem('mcq_firebase_config');
+                } else {
+                    return alert("Firebase 설정을 입력하세요.");
                 }
+            }
+
+            const configObj = parseFirebaseConfigInput(configStr);
+            if (!configObj) return alert("Firebase Config 형식이 올바르지 않습니다.");
+
+            localStorage.setItem('mcq_cloud_room', room);
+            localStorage.setItem('mcq_firebase_config', JSON.stringify(configObj, null, 2));
+            
+            document.getElementById('cloud-modal').classList.add('hidden');
+            initCloudSync();
+        }
+
+        function disconnectCloud() {
+            if(unsubscribe) unsubscribe();
+            dbRef = null;
+            localStorage.removeItem('mcq_cloud_room');
+            updateCloudUI(false);
+            document.getElementById('cloud-modal').classList.add('hidden');
+            alert("클라우드 연동이 해제되었습니다.");
+        }
+
+        function updateCloudUI(isConnected, errMsg = "") {
+            const btn = document.getElementById('cloud-status-btn');
+            const icon = document.getElementById('cloud-status-icon');
+            const text = document.getElementById('cloud-status-text');
+            const disBtn = document.getElementById('btn-disconnect');
+            
+            if (isConnected) {
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-emerald-50 border-emerald-200";
+                icon.className = "fa-solid fa-cloud text-emerald-500";
+                text.className = "text-emerald-700";
+                text.textContent = "동기화 중";
+                disBtn.classList.remove('hidden');
             } else {
-                localStorage.removeItem('cpa_firebase_config');
+                btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors bg-slate-50 border-slate-200";
+                icon.className = "fa-solid fa-cloud text-slate-400";
+                text.className = "text-slate-600";
+                text.textContent = errMsg ? "오프라인 (오류)" : "오프라인";
+                disBtn.classList.add('hidden');
             }
+        }
 
-            window.closeLoginModal();
-            if(window.showModal) window.showModal("클라우드 연동 중입니다...\n잠시만 기다려주세요.");
+        // --- 3. UI 네비게이션 및 홈 화면 ---
+        function goHome() {
+            document.getElementById('view-home').classList.remove('hidden');
+            document.getElementById('view-quiz').classList.add('hidden');
+            document.getElementById('view-scrap').classList.add('hidden');
+            flattenData(); // in case new scripts were added
+            renderHome();
+        }
+
+        function renderHome() {
+            const list = document.getElementById('subject-list');
+            list.innerHTML = '';
             
-            const isAuth = await window.authenticateFirebase(currentAuth);
-            if (!isAuth) {
-                if(window.showModal) window.showModal("서버 연결에 실패했습니다.");
+            if (Object.keys(window.quizData).length === 0) {
+                list.innerHTML = '<div class="p-5 text-center text-sm text-slate-500 bg-white rounded-xl border border-slate-200">기출문제 데이터가 없습니다.<br>quizData.js 등의 파일을 연결해주세요.</div>';
                 return;
             }
 
-            try {
-                // 커스텀 DB를 사용하도록 전역 변수 업데이트
-                db = currentDb;
-                auth = currentAuth;
-
-                // 공용(public) 데이터 컬렉션을 통해 코드를 기반으로 문서 공유
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cloud_saves', code);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    // 기존 데이터가 있으면 로컬 스토리지에 덮어쓰기
-                    const data = docSnap.data();
-                    if (data.progress) localStorage.setItem('cpa_progress', JSON.stringify(data.progress));
-                    if (data.incorrectNote) localStorage.setItem('cpa_incorrect_note', JSON.stringify(data.incorrectNote));
-                    window.currentLoginCode = code;
-                    
-                    if(window.showModal) window.showModal(`[${code}] 계정의 데이터를 성공적으로 불러왔습니다.`);
-                } else {
-                    // 데이터가 없으면 현재 기기의 데이터를 새롭게 백업
-                    window.currentLoginCode = code;
-                    await window.syncDataToCloud();
-                    
-                    if(window.showModal) window.showModal(`[${code}] 새로운 클라우드 계정이 생성되었습니다.\n앞으로 진행 상황이 자동 백업됩니다.`);
+            for (let subj in window.quizData) {
+                const total = window.quizData[subj].length;
+                const prog = appState.progress[subj];
+                let solved = 0;
+                let percent = 0;
+                
+                if (prog) {
+                    solved = prog.currentIdx;
+                    if (solved > total) solved = total;
+                    percent = Math.round((solved / total) * 100);
                 }
-                
-                // UI 업데이트
-                const cloudBtn = document.getElementById('cloud-status');
-                if(cloudBtn) {
-                    cloudBtn.innerText = `☁️ ${code} 연동중`;
-                    cloudBtn.classList.replace('bg-blue-700', 'bg-green-600');
-                    cloudBtn.classList.replace('hover:bg-blue-600', 'hover:bg-green-700');
-                    cloudBtn.classList.replace('border-blue-600', 'border-green-500');
-                }
-                
-                // 홈 화면에 있다면 카드 새로고침
-                if(typeof window.renderHomeCards === 'function') window.renderHomeCards();
-                
-            } catch(e) {
-                console.error("Firestore Error:", e);
-                if(window.showModal) window.showModal("데이터 연동 중 오류가 발생했습니다.");
+
+                list.innerHTML += `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm cursor-pointer hover:border-indigo-400 transition-colors" onclick="startQuiz('${subj}')">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-lg mb-1">${subj}</h3>
+                            <p class="text-xs text-slate-500 font-medium">진행률: ${percent}% (${solved} / ${total})</p>
+                        </div>
+                        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                    </div>
+                `;
             }
-        };
+        }
 
-        window.syncDataToCloud = async function() {
-            if (!window.currentLoginCode || !db || !auth || !auth.currentUser) return;
+        // --- 4. 퀴즈 진행 로직 ---
+        function shuffleArray(array) {
+            let curId = array.length, temp, randId;
+            while (0 !== curId) {
+                randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                temp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = temp;
+            }
+            return array;
+        }
+
+        function startQuiz(subj) {
+            currentSubject = subj;
+            const total = window.quizData[subj].length;
             
-            const progressData = JSON.parse(localStorage.getItem('cpa_progress') || '{}');
-            const noteData = JSON.parse(localStorage.getItem('cpa_incorrect_note') || '{}');
+            if (!appState.progress[subj] || appState.progress[subj].currentIdx >= total) {
+                const ids = window.quizData[subj].map(q => q.id);
+                appState.progress[subj] = {
+                    currentIdx: 0,
+                    shuffledIds: shuffleArray(ids),
+                    correct: 0,
+                    wrong: 0
+                };
+                saveLocalState();
+            }
             
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cloud_saves', window.currentLoginCode);
-                await setDoc(docRef, {
-                    progress: progressData,
-                    incorrectNote: noteData,
-                    updatedAt: Date.now(),
-                    ownerUid: auth.currentUser.uid
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-quiz').classList.remove('hidden');
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-actions').classList.add('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const prog = appState.progress[currentSubject];
+            prog.shuffledIds = prog.shuffledIds.filter(id => allQuestions[id] !== undefined);
+            
+            const total = prog.shuffledIds.length;
+            
+            if (prog.currentIdx >= total) {
+                showResult();
+                return;
+            }
+
+            isAnswered = false;
+            const qId = prog.shuffledIds[prog.currentIdx];
+            currentQuestionObj = allQuestions[qId];
+
+            document.getElementById('quiz-progress-text').textContent = `${prog.currentIdx + 1} / ${total}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((prog.currentIdx) / total) * 100}%`;
+            
+            document.getElementById('quiz-badge-year').textContent = `${currentQuestionObj.year}년 기출`;
+            document.getElementById('quiz-badge-subject').textContent = currentQuestionObj.subject;
+            document.getElementById('quiz-question').textContent = currentQuestionObj.question;
+
+            const optContainer = document.getElementById('quiz-options');
+            optContainer.innerHTML = '';
+            currentQuestionObj.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = escapeHtml(opt);
+                btn.onclick = () => selectOption(idx + 1, btn);
+                optContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-actions').classList.add('hidden');
+            updateScrapButtonUI();
+        }
+
+        function selectOption(selectedNum, btnElement) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const correctNum = currentQuestionObj.answer;
+            const buttons = document.getElementById('quiz-options').children;
+
+            if (selectedNum === correctNum) {
+                btnElement.classList.add('option-correct');
+                appState.progress[currentSubject].correct++;
+            } else {
+                btnElement.classList.add('option-wrong');
+                const ansArray = Array.isArray(correctNum) ? correctNum : [correctNum];
+                ansArray.forEach(ans => {
+                    if(buttons[ans - 1]) buttons[ans - 1].classList.add('option-correct');
                 });
-                console.log("Cloud sync successful for code:", window.currentLoginCode);
-            } catch(e) {
-                console.error("Sync Error:", e);
+                appState.progress[currentSubject].wrong++;
             }
-        };
+
+            Array.from(buttons).forEach(b => b.disabled = true);
+            document.getElementById('quiz-actions').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            appState.progress[currentSubject].currentIdx++;
+            saveLocalState();
+            renderQuestion();
+        }
+
+        function showResult() {
+            document.getElementById('quiz-badge-year').parentElement.classList.add('hidden');
+            document.getElementById('quiz-question').classList.add('hidden');
+            document.getElementById('quiz-options').classList.add('hidden');
+            document.getElementById('quiz-actions').classList.add('hidden');
+            
+            const prog = appState.progress[currentSubject];
+            const total = prog.shuffledIds.length;
+            const percent = total > 0 ? Math.round((prog.correct / total) * 100) : 0;
+            
+            document.getElementById('quiz-progress-bar').style.width = `100%`;
+            document.getElementById('quiz-result-score').textContent = `정답률: ${percent}% (맞은 문제: ${prog.correct} / 틀린 문제: ${prog.wrong})`;
+            document.getElementById('quiz-result').classList.remove('hidden');
+            document.getElementById('quiz-result').classList.add('flex');
+        }
+
+        function resetSubjectProgress() {
+            const ids = window.quizData[currentSubject].map(q => q.id);
+            appState.progress[currentSubject] = {
+                currentIdx: 0,
+                shuffledIds: shuffleArray(ids),
+                correct: 0,
+                wrong: 0
+            };
+            saveLocalState();
+            
+            document.getElementById('quiz-badge-year').parentElement.classList.remove('hidden');
+            document.getElementById('quiz-question').classList.remove('hidden');
+            document.getElementById('quiz-options').classList.remove('hidden');
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('flex');
+            renderQuestion();
+        }
+
+        // --- 5. 오답/스크랩 노트 로직 ---
+        function toggleCurrentScrap() {
+            if (!currentQuestionObj) return;
+            const id = currentQuestionObj.id;
+            const idx = appState.scrap.indexOf(id);
+            
+            if (idx > -1) {
+                appState.scrap.splice(idx, 1);
+            } else {
+                appState.scrap.push(id);
+            }
+            saveLocalState();
+            updateScrapButtonUI();
+        }
+
+        function updateScrapButtonUI() {
+            const btn = document.getElementById('btn-scrap-toggle');
+            if (!currentQuestionObj) return;
+            
+            if (appState.scrap.includes(currentQuestionObj.id)) {
+                btn.className = "flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-100 text-amber-700 border border-amber-300";
+                btn.innerHTML = '<i class="fa-solid fa-star"></i> 스크랩 해제';
+            } else {
+                btn.className = "flex-1 py-3.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border border-slate-200 hover:bg-slate-50";
+                btn.innerHTML = '<i class="fa-regular fa-star"></i> 오답노트 스크랩';
+            }
+        }
+
+        function goScrapbook() {
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-scrap').classList.remove('hidden');
+            renderScrapbook();
+        }
+
+        function renderScrapbook() {
+            const list = document.getElementById('scrap-list');
+            list.innerHTML = '';
+            
+            appState.scrap = appState.scrap.filter(id => allQuestions[id] !== undefined);
+            
+            if (appState.scrap.length === 0) {
+                list.innerHTML = '<div class="p-8 text-center text-slate-500 bg-white rounded-2xl border border-slate-200 text-sm">저장된 오답/스크랩이 없습니다.</div>';
+                return;
+            }
+
+            let grouped = {};
+            appState.scrap.forEach(id => {
+                const q = allQuestions[id];
+                if (q) {
+                    if (!grouped[q.subject]) grouped[q.subject] = [];
+                    grouped[q.subject].push(q);
+                }
+            });
+
+            for (let subj in grouped) {
+                list.innerHTML += `<h3 class="font-bold text-slate-800 mt-4 mb-2 pl-1">${subj}</h3>`;
+                
+                grouped[subj].forEach(q => {
+                    const ansArray = Array.isArray(q.answer) ? q.answer : [q.answer];
+                    let optionsHtml = q.options.map((opt, idx) => {
+                        const isAnswer = ansArray.includes(idx + 1);
+                        return `<div class="p-3 mb-1.5 rounded-lg text-sm ${isAnswer ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200' : 'bg-slate-50 text-slate-600'}">${escapeHtml(opt)}</div>`;
+                    }).join('');
+
+                    list.innerHTML += `
+                        <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative">
+                            <button onclick="removeScrapFromList('${q.id}')" class="absolute top-4 right-4 text-amber-400 hover:text-amber-500 text-lg"><i class="fa-solid fa-star"></i></button>
+                            <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded mb-2 inline-block">${q.year}년 기출</span>
+                            <h4 class="font-bold text-slate-800 text-base mb-4 leading-relaxed pr-6 whitespace-pre-wrap">${escapeHtml(q.question)}</h4>
+                            <div class="flex flex-col">${optionsHtml}</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function removeScrapFromList(id) {
+            const idx = appState.scrap.indexOf(id);
+            if (idx > -1) {
+                appState.scrap.splice(idx, 1);
+                saveLocalState();
+                renderScrapbook();
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
     </script>
 </body>
 </html>
