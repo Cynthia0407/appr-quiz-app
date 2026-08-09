@@ -155,12 +155,20 @@
         </div>
     </div>
 
-    <!-- 외부 문제 데이터 연결 부분 (테스트를 위해 민법 예시파일 하나만 연동) -->
+    <!-- 1. 데이터를 담을 빈 공간을 가장 먼저 생성 (오류 방지 핵심) -->
+    <script>
+        window.quizData = window.quizData || {};
+    </script>
+
+    <!-- 2. 외부 문제 데이터 연결 (깃허브 파일명과 대소문자까지 100% 일치해야 함) -->
     <script src="quizData_civil_law.js"></script>
+    <script src="quizData_economics.js"></script>
+    <script src="quizData_real_estate.js"></script>
+    <script src="quizData_valuation_law.js"></script>
+    <script src="quizData_accounting.js"></script>
     
     <script>
         // --- 1. 앱 상태 및 초기화 ---
-        window.quizData = window.quizData || {};
         
         if (typeof quizData !== 'undefined') {
             for (let key in quizData) {
