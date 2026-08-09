@@ -22,11 +22,15 @@
         .option-correct { background-color: #ecfdf5 !important; border-color: #10b981 !important; color: #065f46 !important; font-weight: bold; }
         .option-wrong { background-color: #fff1f2 !important; border-color: #f43f5e !important; color: #9f1239 !important; font-weight: bold; text-decoration: line-through; }
         .hidden { display: none !important; }
+        
+        /* Toast Animation */
+        #toast { transition: opacity 0.3s, transform 0.3s; }
+        .toast-show { opacity: 1 !important; transform: translateY(0) !important; }
     </style>
 </head>
 <body class="min-h-[100dvh] flex flex-col text-slate-800">
 
-    <!-- Header (오리지널 블루 스타일) -->
+    <!-- Header -->
     <header class="bg-[#2c52b3] border-b border-indigo-800 sticky top-0 z-30">
         <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
             <h1 class="font-bold text-white text-lg cursor-pointer" onclick="goHome()">감정평가사 1차 기출학습</h1>
@@ -72,61 +76,36 @@
         </div>
 
         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-4">
-            <h2 id="quiz-question" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed mb-6 whitespace-pre-wrap">문제 내용</h2>
-            
-            <div id="quiz-options" class="flex flex-col">
-                <!-- 보기 항목들 -->
+            <div id="quiz-question-container">
+                <h2 id="quiz-question" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed mb-6 whitespace-pre-wrap">문제 내용</h2>
+                <div id="quiz-options" class="flex flex-col">
+                    <!-- 보기 항목들 -->
+                </div>
             </div>
         </div>
 
-        <!-- Post-Answer Actions (이전/다음 버튼 항상 표시되도록 수정) -->
-        <div id="quiz-actions" class="flex flex-col gap-2 mt-2 pb-8 shrink-0">
-            <button id="btn-scrap-toggle" onclick="toggleCurrentScrap()" class="w-full py-4 rounded-xl font-bold text-sm border transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border-slate-300 hover:bg-slate-50 shadow-sm">
-                <i class="fa-regular fa-star"></i> 오답노트 스크랩
+        <!-- 하단 네비게이션 액션 버튼 -->
+        <div id="quiz-nav-actions" class="flex gap-2 mt-2 pb-8 shrink-0">
+            <button onclick="prevQuestion()" class="px-5 py-4 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors shadow-sm">
+                <i class="fa-solid fa-arrow-left"></i> 이전
             </button>
-            <div class="flex gap-2 w-full mt-1">
-                <button id="btn-prev-question" onclick="prevQuestion()" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                    <i class="fa-solid fa-arrow-left"></i> 이전
-                </button>
-                <!-- 다음 버튼은 기본적으로 비활성화 (답을 골라야 활성화됨) -->
-                <button id="btn-next-question" onclick="nextQuestion()" disabled class="flex-[2] py-4 bg-[#2c52b3] text-white rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm opacity-50 cursor-not-allowed">
-                    다음 문제 <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </div>
+            <button id="btn-scrap-toggle" onclick="toggleCurrentScrap()" class="flex-1 py-4 rounded-xl font-bold text-sm border transition-colors flex items-center justify-center gap-2"></button>
+            <button id="btn-next-question" onclick="nextQuestion()" disabled class="flex-1 py-4 bg-slate-300 text-slate-500 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-not-allowed">
+                다음 문제 <i class="fa-solid fa-arrow-right"></i>
+            </button>
         </div>
         
         <!-- Result Screen -->
         <div id="quiz-result" class="hidden flex-col items-center justify-center py-16">
             <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-4xl mb-4"><i class="fa-solid fa-flag-checkered"></i></div>
             <h2 class="text-2xl font-bold text-slate-800 mb-2">학습 완료!</h2>
-            <p class="text-slate-500 text-base mb-8" id="quiz-result-score">정답률: 0%</p>
+            <p class="text-slate-500 text-base mb-8 text-center" id="quiz-result-score">정답률: 0%</p>
             <div class="flex gap-3 w-full max-w-sm">
                 <button onclick="goHome()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">홈으로</button>
                 <button onclick="restartCurrentSession()" class="flex-1 py-3.5 bg-[#2c52b3] hover:bg-blue-800 text-white font-bold rounded-xl shadow-sm transition-colors">다시 풀기</button>
             </div>
         </div>
     </main>
-
-    <!-- 진행률 초기화 확인 자체 모달 (alert/confirm 대체) -->
-    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-            <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-                <i class="fa-solid fa-rotate-right"></i>
-            </div>
-            <h3 class="font-bold text-slate-800 text-lg mb-2">진행률 초기화</h3>
-            <p class="text-sm text-slate-500 mb-6 break-keep">정말 <span id="confirm-subj-name" class="font-bold text-indigo-600"></span> 과목의 진행률을 0%로 초기화하시겠습니까?<br><span class="text-xs text-rose-500 mt-1 block">(스크랩한 오답노트는 지워지지 않습니다)</span></p>
-            <div class="flex gap-2 w-full">
-                <button onclick="closeConfirmModal()" class="flex-1 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">취소</button>
-                <button onclick="executeResetProgress()" class="flex-1 py-3.5 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 transition-colors shadow-sm">초기화 진행</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 자체 토스트 알림 메시지창 -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl text-sm font-bold shadow-lg transition-all duration-300 opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
-        <i class="fa-solid fa-circle-info text-indigo-400"></i>
-        <span id="toast-msg">메시지</span>
-    </div>
 
     <!-- Cloud Modal -->
     <div id="cloud-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -155,12 +134,29 @@
         </div>
     </div>
 
-    <!-- 1. 데이터를 담을 빈 공간을 가장 먼저 생성 (오류 방지 핵심) -->
-    <script>
-        window.quizData = window.quizData || {};
-    </script>
+    <!-- Confirm Reset Modal -->
+    <div id="reset-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+            <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fa-solid fa-rotate-left"></i>
+            </div>
+            <h3 class="font-bold text-slate-800 text-lg mb-2">진행률을 초기화하시겠습니까?</h3>
+            <p class="text-sm text-slate-500 mb-6">선택하신 과목의 <b>문제 풀이 진행률(정답/오답 기록 포함)</b>이 완전히 초기화되어 0문제부터 다시 시작하게 됩니다.<br><br>단, 스크랩(오답노트) 내역은 삭제되지 않습니다.</p>
+            <div class="flex gap-3">
+                <button onclick="closeResetModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">취소</button>
+                <button onclick="executeResetProgress()" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl transition-colors shadow-sm">초기화 진행</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- 2. 외부 문제 데이터 연결 (깃허브 파일명과 대소문자까지 100% 일치해야 함) -->
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-full text-sm font-bold shadow-lg opacity-0 transform translate-y-4 pointer-events-none z-50 flex items-center gap-2">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-msg">메시지</span>
+    </div>
+
+    <!-- 외부 문제 데이터 연결 부분 -->
+    <script>window.quizData = window.quizData || {};</script>
     <script src="quizData_civil_law.js"></script>
     <script src="quizData_economics.js"></script>
     <script src="quizData_real_estate.js"></script>
@@ -169,13 +165,6 @@
     
     <script>
         // --- 1. 앱 상태 및 초기화 ---
-        
-        if (typeof quizData !== 'undefined') {
-            for (let key in quizData) {
-                window.quizData[key] = quizData[key];
-            }
-        }
-
         let allQuestions = {};
         
         function flattenData() {
@@ -189,21 +178,25 @@
         }
 
         let appState = {
-            progress: {}, // { "민법": { currentIdx: 0, shuffledIds: ["id1", ...], correct: 0, wrong: 0, history: {"id1": 3} } }
+            progress: {}, // { "민법": { currentIdx: 0, shuffledIds: ["id1", ...], correct: 0, wrong: 0, answers: {"id1": 3} } }
             scrap: []     // ["id1", "id2"]
         };
 
+        // 퀴즈 진행용 세션 변수
         let currentSubject = null;
         let isWrongMode = false;
         let sessionIds = [];
         let sessionIdx = 0;
         let sessionCorrect = 0;
         let sessionWrong = 0;
+        
         let currentQuestionObj = null;
         let isAnswered = false;
-        let subjectToReset = null; // 초기화 대상 과목 임시 저장
 
-        // --- 2. 클라우드 연동 로직 ---
+        // 리셋 대상 과목 저장용
+        let pendingResetSubject = null;
+
+        // --- 2. 클라우드 연동 로직 (Firestore) ---
         let roomId = '';
         let dbRef = null;
         let unsubscribe = null;
@@ -228,10 +221,6 @@
             }
             if (!appState.progress) appState.progress = {};
             if (!appState.scrap) appState.scrap = [];
-            
-            for (let subj in appState.progress) {
-                if (!appState.progress[subj].history) appState.progress[subj].history = {};
-            }
         }
 
         function saveLocalState() {
@@ -240,7 +229,9 @@
         }
 
         function syncToCloud() {
-            if (dbRef) dbRef.set(appState, { merge: true }).catch(e => console.error(e));
+            if (dbRef) {
+                dbRef.set(appState, { merge: true }).catch(e => console.error(e));
+            }
         }
 
         function parseFirebaseConfigInput(inputStr) {
@@ -260,6 +251,7 @@
                 return;
             }
             roomId = savedRoom;
+
             const configObj = parseFirebaseConfigInput(savedConfigStr);
             if (!configObj) return;
 
@@ -275,12 +267,14 @@
                             const data = doc.data();
                             if (data.progress) appState.progress = data.progress;
                             if (data.scrap) appState.scrap = data.scrap;
+                            
                             if (!document.getElementById('view-home').classList.contains('hidden')) renderHome();
                         } else {
                             syncToCloud();
                         }
                         updateCloudUI(true);
                     }, err => {
+                        console.error(err);
                         updateCloudUI(false, "권한 오류");
                     });
                 }
@@ -299,22 +293,25 @@
             let room = document.getElementById('cloud-room-id').value.trim();
             let configStr = document.getElementById('firebase-config-input').value.trim();
             
-            if (!room) return showToast("스터디룸 코드를 입력하세요.");
+            if (!room) return showToast("스터디룸 코드를 입력하세요.", "error");
             if (room === 'onion10') configStr = JSON.stringify(DEFAULT_ONION_CONFIG);
             else if (!configStr) {
-                if (localStorage.getItem('cpa_firebase_config')) configStr = localStorage.getItem('cpa_firebase_config');
-                else return showToast("Firebase 설정을 입력하세요.");
+                if (localStorage.getItem('cpa_firebase_config')) {
+                    configStr = localStorage.getItem('cpa_firebase_config');
+                } else {
+                    return showToast("Firebase 설정을 입력하세요.", "error");
+                }
             }
 
             const configObj = parseFirebaseConfigInput(configStr);
-            if (!configObj) return showToast("Firebase Config 형식이 올바르지 않습니다.");
+            if (!configObj) return showToast("Firebase Config 형식이 올바르지 않습니다.", "error");
 
             localStorage.setItem('cpa_cloud_room', room);
             localStorage.setItem('cpa_firebase_config', JSON.stringify(configObj, null, 2));
             
             document.getElementById('cloud-modal').classList.add('hidden');
             initCloudSync();
-            showToast("클라우드 연동이 설정되었습니다.");
+            showToast("클라우드 설정이 저장되었습니다.", "success");
         }
 
         function disconnectCloud() {
@@ -323,7 +320,7 @@
             localStorage.removeItem('cpa_cloud_room');
             updateCloudUI(false);
             document.getElementById('cloud-modal').classList.add('hidden');
-            showToast("클라우드 연동이 해제되었습니다.");
+            showToast("클라우드 연동이 해제되었습니다.", "success");
         }
 
         function updateCloudUI(isConnected, errMsg = "") {
@@ -347,7 +344,7 @@
             }
         }
 
-        // --- 3. UI 네비게이션 및 홈 화면 ---
+        // --- 3. 오리지널 UI 홈 화면 렌더링 ---
         function goHome() {
             document.getElementById('view-home').classList.remove('hidden');
             document.getElementById('view-quiz').classList.add('hidden');
@@ -362,7 +359,7 @@
             if (Object.keys(window.quizData).length === 0) {
                 list.innerHTML = `
                 <div class="col-span-full p-10 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-                    기출문제 데이터가 없습니다.<br>quizData.js 등의 파일을 연결해주세요.
+                    기출문제 데이터가 없습니다.<br>과목별 js 파일을 연결해주세요.
                 </div>`;
                 return;
             }
@@ -371,28 +368,27 @@
                 const total = window.quizData[subj].length;
                 const prog = appState.progress[subj];
                 let solved = prog ? Math.min(prog.currentIdx, total) : 0;
+                
+                // 해당 과목의 오답노트(스크랩) 개수 계산
                 const wrongCount = appState.scrap.filter(id => allQuestions[id] && allQuestions[id].subject === subj).length;
 
-                // 초기화 버튼은 1문제 이상 풀었을 때 명확히 텍스트와 함께 표시
-                const resetBtnHtml = solved > 0 
-                    ? `<button onclick="promptResetProgress('${subj}')" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition-colors text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-rotate-right"></i> 기록 초기화</button>` 
-                    : `<span class="text-xs text-slate-400 font-medium">새로운 시작</span>`;
+                // 리셋 버튼 UI (한 문제라도 풀었을 때만 보임)
+                const resetBtnHtml = solved > 0 ? `
+                    <button onclick="openResetModal('${subj}', event)" class="absolute top-4 right-4 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold rounded-lg transition-colors border border-rose-200" title="진행률 초기화">
+                        <i class="fa-solid fa-rotate-left"></i> 진행률 초기화
+                    </button>
+                ` : '';
 
                 list.innerHTML += `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-bold text-slate-800 text-xl mb-1">${subj}</h3>
-                                <p class="text-sm text-slate-500 font-medium flex items-center gap-2">
-                                    <span>총 ${total}문제 탑재</span>
-                                    <span class="text-[#2c52b3] font-bold">(진행률: ${solved}/${total})</span>
-                                </p>
-                            </div>
-                            ${resetBtnHtml}
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-5 relative">
+                        ${resetBtnHtml}
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-xl mb-1">${subj}</h3>
+                            <p class="text-sm text-slate-500 font-medium">총 ${total}문제 탑재 <span class="text-[#2c52b3] font-bold ml-1">(진행률: ${solved}/${total})</span></p>
                         </div>
                         <div class="flex flex-col gap-3">
                             <button onclick="startQuiz('${subj}', false)" class="w-full py-3.5 bg-blue-50 text-[#2c52b3] font-bold rounded-xl hover:bg-blue-100 transition-colors">
-                                전체 기출 풀기
+                                ${solved > 0 && solved < total ? '이어서 풀기' : '전체 기출 풀기'}
                             </button>
                             <button onclick="startQuiz('${subj}', true)" class="w-full py-3.5 bg-rose-50 text-rose-600 font-bold rounded-xl hover:bg-rose-100 transition-colors flex justify-center items-center gap-2 ${wrongCount === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${wrongCount === 0 ? 'disabled' : ''}>
                                 오답노트 풀기 <span class="bg-white text-rose-500 px-2.5 py-0.5 rounded-full text-xs shadow-sm">${wrongCount}</span>
@@ -403,42 +399,28 @@
             }
         }
 
-        // --- 자체 모달창을 활용한 초기화 로직 ---
-        function promptResetProgress(subj) {
-            subjectToReset = subj;
-            document.getElementById('confirm-subj-name').textContent = subj;
-            document.getElementById('confirm-modal').classList.remove('hidden');
+        // --- 진행률 리셋 로직 ---
+        function openResetModal(subj, event) {
+            if (event) event.stopPropagation();
+            pendingResetSubject = subj;
+            document.getElementById('reset-confirm-modal').classList.remove('hidden');
         }
 
-        function closeConfirmModal() {
-            subjectToReset = null;
-            document.getElementById('confirm-modal').classList.add('hidden');
+        function closeResetModal() {
+            pendingResetSubject = null;
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
         }
 
         function executeResetProgress() {
-            if(!subjectToReset) return;
-            const ids = window.quizData[subjectToReset].map(q => q.id);
-            appState.progress[subjectToReset] = {
-                currentIdx: 0,
-                shuffledIds: shuffleArray(ids),
-                correct: 0,
-                wrong: 0,
-                history: {} // 히스토리 완전 초기화
-            };
+            if (!pendingResetSubject) return;
+            
+            // 해당 과목의 진행률 데이터만 삭제 (스크랩은 유지)
+            delete appState.progress[pendingResetSubject];
             saveLocalState();
-            closeConfirmModal();
+            
+            closeResetModal();
             renderHome();
-            showToast(`${subjectToReset} 진행률이 0%로 초기화되었습니다.`);
-        }
-
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-msg');
-            toastMsg.textContent = msg;
-            toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-            }, 2500);
+            showToast(`'${pendingResetSubject}' 진행률이 초기화되었습니다.`, 'success');
         }
 
         // --- 4. 퀴즈 진행 로직 ---
@@ -458,17 +440,28 @@
             currentSubject = subj;
             isWrongMode = wrongMode;
             
+            // 문제 풀이 UI 숨김 해제 (결과 화면에서 다시 넘어올 때 대비)
+            document.getElementById('quiz-badge-year').parentElement.classList.remove('hidden');
+            document.getElementById('quiz-question').classList.remove('hidden');
+            document.getElementById('quiz-options').classList.remove('hidden');
+            document.getElementById('quiz-nav-actions').classList.remove('hidden');
+            
             if (isWrongMode) {
+                // 오답노트 모드: 스크랩된 문제만 섞어서 출제
                 let targetIds = appState.scrap.filter(id => allQuestions[id] && allQuestions[id].subject === subj);
-                if (targetIds.length === 0) return;
+                if (targetIds.length === 0) {
+                    showToast("스크랩된 오답노트가 없습니다.", "error");
+                    goHome();
+                    return;
+                }
                 
                 sessionIds = shuffleArray([...targetIds]);
                 sessionIdx = 0;
                 sessionCorrect = 0;
                 sessionWrong = 0;
-                window.sessionHistory = {}; 
                 document.getElementById('quiz-badge-mode').classList.remove('hidden');
             } else {
+                // 전체 기출 풀기 모드: 진행률 연동
                 const total = window.quizData[subj].length;
                 if (!appState.progress[subj] || appState.progress[subj].currentIdx >= total) {
                     const ids = window.quizData[subj].map(q => q.id);
@@ -477,14 +470,18 @@
                         shuffledIds: shuffleArray(ids),
                         correct: 0,
                         wrong: 0,
-                        history: {}
+                        answers: {} // { "문제id": 선택한번호 } (히스토리 저장용)
                     };
                     saveLocalState();
                 }
-                if (!appState.progress[subj].history) appState.progress[subj].history = {};
+                
+                if (!appState.progress[subj].answers) {
+                    appState.progress[subj].answers = {};
+                }
                 
                 sessionIds = appState.progress[subj].shuffledIds;
                 sessionIdx = appState.progress[subj].currentIdx;
+                
                 sessionCorrect = 0; 
                 sessionWrong = 0;
                 document.getElementById('quiz-badge-mode').classList.add('hidden');
@@ -493,21 +490,25 @@
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-quiz').classList.remove('hidden');
             document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('flex');
             
             renderQuestion();
         }
 
         function renderQuestion() {
             const total = sessionIds.length;
+            
             if (sessionIdx >= total) {
                 showResult();
                 return;
             }
 
+            isAnswered = false;
             const qId = sessionIds[sessionIdx];
             currentQuestionObj = allQuestions[qId];
 
             if (!currentQuestionObj) {
+                // 문제 데이터를 찾을 수 없을 때 스킵
                 if(!isWrongMode) {
                     appState.progress[currentSubject].currentIdx++;
                     saveLocalState();
@@ -519,6 +520,7 @@
 
             document.getElementById('quiz-progress-text').textContent = `${sessionIdx + 1} / ${total}`;
             document.getElementById('quiz-progress-bar').style.width = `${((sessionIdx) / total) * 100}%`;
+            
             document.getElementById('quiz-badge-year').textContent = `${currentQuestionObj.year}년 기출`;
             document.getElementById('quiz-badge-subject').textContent = currentQuestionObj.subject;
             document.getElementById('quiz-question').textContent = currentQuestionObj.question;
@@ -533,87 +535,83 @@
                 optContainer.appendChild(btn);
             });
 
-            // 이전 버튼 활성화/비활성화 처리
-            const prevBtn = document.getElementById('btn-prev-question');
-            if (sessionIdx === 0) {
-                prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                prevBtn.disabled = true;
-            } else {
-                prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                prevBtn.disabled = false;
-            }
-
             updateScrapButtonUI();
             
-            // 히스토리 확인하여 이미 푼 문제 복구
+            // 다음 버튼 비활성화 (문제를 풀어야만 활성화)
             const nextBtn = document.getElementById('btn-next-question');
-            let historyMap = isWrongMode ? window.sessionHistory : appState.progress[currentSubject].history;
-            
-            if (historyMap && historyMap[qId]) {
-                isAnswered = true;
-                const prevAnswer = historyMap[qId];
-                const buttons = document.getElementById('quiz-options').children;
-                const correctNum = currentQuestionObj.answer;
-                const btnElement = buttons[prevAnswer - 1];
-                const ansArray = Array.isArray(correctNum) ? correctNum : [correctNum];
-                
-                if (ansArray.includes(prevAnswer)) {
-                    if (btnElement) btnElement.classList.add('option-correct');
-                } else {
-                    if (btnElement) btnElement.classList.add('option-wrong');
-                    ansArray.forEach(ans => {
-                        if(buttons[ans - 1]) buttons[ans - 1].classList.add('option-correct');
-                    });
+            nextBtn.disabled = true;
+            nextBtn.className = "flex-1 py-4 bg-slate-300 text-slate-500 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-not-allowed";
+
+            // 히스토리(과거 풀이 기록) 체크 및 복원 (전체 풀기 모드일 때만 적용)
+            if (!isWrongMode) {
+                const pastAnswer = appState.progress[currentSubject].answers[qId];
+                if (pastAnswer !== undefined) {
+                    const buttons = document.getElementById('quiz-options').children;
+                    if (buttons[pastAnswer - 1]) {
+                        isAnswered = false; 
+                        selectOption(pastAnswer, buttons[pastAnswer - 1], true); 
+                    }
                 }
-                Array.from(buttons).forEach(b => b.disabled = true);
-                
-                // 이미 푼 문제이므로 '다음 문제' 버튼 활성화
-                nextBtn.disabled = false;
-                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            } else {
-                isAnswered = false;
-                // 아직 풀지 않은 문제이므로 '다음 문제' 버튼 비활성화
-                nextBtn.disabled = true;
-                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
 
-        function selectOption(selectedNum, btnElement) {
+        function selectOption(selectedNum, btnElement, isHistory = false) {
             if (isAnswered) return;
             isAnswered = true;
 
-            const qId = currentQuestionObj.id;
             const correctNum = currentQuestionObj.answer;
             const buttons = document.getElementById('quiz-options').children;
-            const ansArray = Array.isArray(correctNum) ? correctNum : [correctNum];
+            
+            let isCorrect = false;
 
-            if (ansArray.includes(selectedNum)) {
+            if (Array.isArray(correctNum)) {
+                isCorrect = correctNum.includes(selectedNum);
+            } else {
+                isCorrect = (selectedNum === correctNum);
+            }
+
+            if (isCorrect) {
                 btnElement.classList.add('option-correct');
-                sessionCorrect++;
-                if(!isWrongMode) appState.progress[currentSubject].correct++;
+                if (!isHistory) {
+                    sessionCorrect++;
+                    if (!isWrongMode) appState.progress[currentSubject].correct++;
+                }
             } else {
                 btnElement.classList.add('option-wrong');
+                // 정답 표시
+                const ansArray = Array.isArray(correctNum) ? correctNum : [correctNum];
                 ansArray.forEach(ans => {
                     if(buttons[ans - 1]) buttons[ans - 1].classList.add('option-correct');
                 });
-                sessionWrong++;
-                if(!isWrongMode) appState.progress[currentSubject].wrong++;
+                
+                if (!isHistory) {
+                    sessionWrong++;
+                    if (!isWrongMode) appState.progress[currentSubject].wrong++;
+                }
             }
+
+            // 모든 버튼 비활성화
+            Array.from(buttons).forEach(b => b.disabled = true);
             
-            if (isWrongMode) {
-                if(!window.sessionHistory) window.sessionHistory = {};
-                window.sessionHistory[qId] = selectedNum;
-            } else {
-                appState.progress[currentSubject].history[qId] = selectedNum;
+            // 기록 저장
+            if (!isWrongMode && !isHistory) {
+                appState.progress[currentSubject].answers[currentQuestionObj.id] = selectedNum;
+                if (sessionIdx === appState.progress[currentSubject].currentIdx) {
+                    appState.progress[currentSubject].currentIdx = sessionIdx + 1;
+                }
                 saveLocalState();
             }
 
-            Array.from(buttons).forEach(b => b.disabled = true);
-            
-            // 답을 골랐으므로 '다음 문제' 버튼 활성화
+            // 다음 버튼 활성화
             const nextBtn = document.getElementById('btn-next-question');
             nextBtn.disabled = false;
-            nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            nextBtn.className = "flex-1 py-4 bg-[#2c52b3] text-white rounded-xl font-bold text-sm hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 shadow-sm";
+        }
+
+        function nextQuestion() {
+            if (!isAnswered) return; 
+            sessionIdx++;
+            renderQuestion();
         }
 
         function prevQuestion() {
@@ -621,65 +619,49 @@
                 sessionIdx--;
                 renderQuestion();
             } else {
-                showToast('첫 번째 문제입니다.');
+                showToast("첫 번째 문제 입니다.", "error");
             }
-        }
-
-        function nextQuestion() {
-            if(!isAnswered) return; // 답을 고르지 않으면 넘어갈 수 없음
-            
-            sessionIdx++;
-            if (!isWrongMode) {
-                if (sessionIdx > appState.progress[currentSubject].currentIdx) {
-                    appState.progress[currentSubject].currentIdx = sessionIdx;
-                }
-                saveLocalState();
-            }
-            renderQuestion();
         }
 
         function showResult() {
             document.getElementById('quiz-badge-year').parentElement.classList.add('hidden');
             document.getElementById('quiz-question').classList.add('hidden');
             document.getElementById('quiz-options').classList.add('hidden');
-            document.getElementById('quiz-actions').classList.add('hidden');
+            document.getElementById('quiz-nav-actions').classList.add('hidden');
             
-            const prog = appState.progress[currentSubject];
-            const total = isWrongMode ? sessionIds.length : prog.shuffledIds.length;
+            const total = sessionIds.length;
             
-            let correctCnt = isWrongMode ? sessionCorrect : prog.correct;
-            let wrongCnt = isWrongMode ? sessionWrong : prog.wrong;
-            const percent = total > 0 ? Math.round((correctCnt / total) * 100) : 0;
+            // 결과창에 표시될 점수 (전체 풀기의 경우 전체 진행률 기록 기준, 오답노트는 세션 기준)
+            let finalCorrect = sessionCorrect;
+            let finalWrong = sessionWrong;
+            
+            if (!isWrongMode) {
+                finalCorrect = appState.progress[currentSubject].correct;
+                finalWrong = appState.progress[currentSubject].wrong;
+            }
+            
+            const percent = total > 0 ? Math.round((finalCorrect / total) * 100) : 0;
             
             document.getElementById('quiz-progress-bar').style.width = `100%`;
-            document.getElementById('quiz-result-score').textContent = `정답률: ${percent}% (맞은 문제: ${correctCnt} / 틀린 문제: ${wrongCnt})`;
+            document.getElementById('quiz-result-score').innerHTML = `정답률: <b class="text-blue-600">${percent}%</b><br><br><span class="text-sm">맞은 문제: ${finalCorrect} / 틀린 문제: ${finalWrong}</span>`;
             document.getElementById('quiz-result').classList.remove('hidden');
             document.getElementById('quiz-result').classList.add('flex');
         }
 
         function restartCurrentSession() {
-            if (isWrongMode) {
-                startQuiz(currentSubject, true);
-            } else {
+            if (!isWrongMode) {
+                // 전체 모드일 때만 진행률 초기화 후 다시 풀기
                 const ids = window.quizData[currentSubject].map(q => q.id);
                 appState.progress[currentSubject] = {
                     currentIdx: 0,
                     shuffledIds: shuffleArray(ids),
                     correct: 0,
                     wrong: 0,
-                    history: {}
+                    answers: {}
                 };
                 saveLocalState();
-                
-                document.getElementById('quiz-badge-year').parentElement.classList.remove('hidden');
-                document.getElementById('quiz-question').classList.remove('hidden');
-                document.getElementById('quiz-options').classList.remove('hidden');
-                document.getElementById('quiz-result').classList.add('hidden');
-                document.getElementById('quiz-result').classList.remove('flex');
-                document.getElementById('quiz-actions').classList.remove('hidden');
-                
-                startQuiz(currentSubject, false);
             }
+            startQuiz(currentSubject, isWrongMode);
         }
 
         // --- 5. 오답/스크랩 노트 로직 ---
@@ -690,10 +672,10 @@
             
             if (idx > -1) {
                 appState.scrap.splice(idx, 1);
-                showToast('오답노트에서 삭제되었습니다.');
+                showToast("스크랩이 해제되었습니다.", "success");
             } else {
                 appState.scrap.push(id);
-                showToast('오답노트에 스크랩되었습니다.');
+                showToast("오답노트에 추가되었습니다.", "success");
             }
             saveLocalState();
             updateScrapButtonUI();
@@ -704,18 +686,41 @@
             if (!currentQuestionObj) return;
             
             if (appState.scrap.includes(currentQuestionObj.id)) {
-                btn.className = "w-full py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-50 text-amber-600 border border-amber-300 shadow-sm";
+                btn.className = "flex-1 py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-amber-50 text-amber-600 border border-amber-300";
                 btn.innerHTML = '<i class="fa-solid fa-star"></i> 스크랩 해제';
             } else {
-                btn.className = "w-full py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border border-slate-300 hover:bg-slate-50 shadow-sm";
-                btn.innerHTML = '<i class="fa-regular fa-star"></i> 오답노트 스크랩';
+                btn.className = "flex-1 py-4 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-white text-slate-600 border border-slate-300 hover:bg-slate-50";
+                btn.innerHTML = '<i class="fa-regular fa-star"></i> 스크랩 추가';
             }
         }
 
+        // --- 공통 유틸리티 ---
         function escapeHtml(text) {
             if (!text) return '';
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        let toastTimeout;
+        function showToast(msg, type="success") {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const msgEl = document.getElementById('toast-msg');
+            
+            msgEl.textContent = msg;
+            
+            if(type === "error") {
+                icon.className = "fa-solid fa-circle-exclamation text-rose-400";
+            } else {
+                icon.className = "fa-solid fa-circle-check text-emerald-400";
+            }
+            
+            toast.classList.add('toast-show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('toast-show');
+            }, 2500);
         }
     </script>
 </body>
